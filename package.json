@@ -1,0 +1,56 @@
+{
+  "name": "crayon",
+  "version": "1.0.0",
+  "description": "Terminal string styling with ANSI escape codes. Tree-shakable, TypeScript-first, no String.prototype patching.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build && tsc --emitDeclarationOnly",
+    "test": "tsx --test src/**/*.test.ts",
+    "test:watch": "tsx --test --watch src/**/*.test.ts",
+    "demo": "node demo.mjs",
+    "demo:bg": "node demo-bg-mode.mjs",
+    "demo:chaining": "node demo-chaining.mjs",
+    "demo:rainbow": "node demo-rainbow.mjs",
+    "demo:rainbow-animated": "node demo-rainbow-animated.mjs",
+    "demo:rainbow-smooth": "node demo-rainbow-smooth.mjs"
+  },
+  "keywords": [
+    "terminal",
+    "color",
+    "ansi",
+    "chalk",
+    "styling",
+    "typescript",
+    "tree-shaking",
+    "console",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.19.0",
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.1",
+    "vite-plugin-dts": "^4.3.0"
+  },
+  "dependencies": {
+    "log-update": "^7.0.2"
+  }
+}
