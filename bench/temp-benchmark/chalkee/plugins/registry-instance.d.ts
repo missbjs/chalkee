@@ -1,0 +1,1 @@
+//# sourceMappingURL=registry-instance.d.ts.map

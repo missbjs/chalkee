@@ -1,0 +1,16 @@
+{
+    "name": "crayon-modifiers-example",
+    "version": "1.0.0",
+    "description": "Example build with only modifiers plugin",
+    "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "scripts": {
+        "build": "vite build",
+        "test": "node test.mjs"
+    },
+    "dependencies": {
+        "crayon": "workspace:../../"
+    }
+}

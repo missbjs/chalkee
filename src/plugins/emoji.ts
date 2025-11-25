@@ -3,28 +3,190 @@
  * Adds emoji support to styling
  */
 import type { StylePlugin } from './base'
-import { pluginRegistry } from './registry-instance'
+import type { StyledFunction } from '../types'
+import { register } from '../registry'
+
+// Simple emoji mapping for common emojis
+const emojiMap: Record<string, string> = {
+  // Smiley faces
+  smile: '😊',
+  laugh: '😂',
+  wink: '😉',
+  heartEyes: '😍',
+  blush: '😊',
+  yum: '😋',
+  relieved: '😌',
+  heart: '❤️',
+  hearts: '💕',
+  brokenHeart: '💔',
+  sparkles: '✨',
+  star: '⭐',
+  fire: '🔥',
+  thumbsUp: '👍',
+  thumbsDown: '👎',
+  okHand: '👌',
+  fist: '✊',
+  wave: '👋',
+  clap: '👏',
+  pray: '🙏',
+  rocket: '🚀',
+  sun: '☀️',
+  moon: '🌙',
+  cloud: '☁️',
+  rainbow: '🌈',
+  umbrella: '☔',
+  snowflake: '❄️',
+  christmasTree: '🎄',
+  gift: '🎁',
+  birthday: '🎂',
+  cake: '🍰',
+  coffee: '☕',
+  tea: '🍵',
+  beer: '🍺',
+  wine: '🍷',
+  cocktail: '🍸',
+  tropicalDrink: '🍹',
+  pizza: '🍕',
+  hamburger: '🍔',
+  fries: '🍟',
+  chicken: '🍗',
+  sushi: '🍣',
+  icecream: '🍦',
+  apple: '🍎',
+  banana: '🍌',
+  strawberry: '🍓',
+  grapes: '🍇',
+  watermelon: '🍉',
+  cherries: '🍒',
+  peach: '🍑',
+  pineapple: '🍍',
+  avocado: '🥑',
+  tomato: '🍅',
+  eggplant: '🍆',
+  corn: '🌽',
+  carrot: '🥕',
+  cucumber: '🥒',
+  mushroom: '🍄',
+  peanuts: '🥜',
+  croissant: '🥐',
+  baguette: '🥖',
+  pancakes: '🥞',
+  cheese: '🧀',
+  egg: '🥚',
+  bacon: '🥓',
+  salad: '🥗',
+  sandwich: '🥪',
+  taco: '🌮',
+  burrito: '🌯',
+  dumpling: '🥟',
+  fortuneCookie: '🥠',
+  moonCake: '🥮',
+  oyster: '🦪',
+  shrimp: '🦐',
+  squid: '🦑',
+  lobster: '🦞',
+  crab: '🦀',
+  blowfish: '🐡',
+  tropicalFish: '🐠',
+  fish: '🐟',
+  shark: '🦈',
+  whale: '🐋',
+  dolphin: '🐬',
+  seal: '🦭',
+  octopus: '🐙',
+  shell: '🐚',
+  snail: '🐌',
+  butterfly: '🦋',
+  bug: '🐛',
+  ant: '🐜',
+  bee: '🐝',
+  beetle: '🪲',
+  ladybug: '🐞',
+  cricket: '🦗',
+  spider: '🕷️',
+  spiderWeb: '🕸️',
+  scorpion: '🦂',
+  mosquito: '🦟',
+  microbe: '🦠',
+  bouquet: '💐',
+  cherryBlossom: '🌸',
+  rose: '🌹',
+  hibiscus: '🌺',
+  sunflower: '🌻',
+  blossom: '🌼',
+  tulip: '🌷',
+  seedling: '🌱',
+  pottedPlant: '🪴',
+  evergreenTree: '🌲',
+  deciduousTree: '🌳',
+  palmTree: '🌴',
+  cactus: '🌵',
+  herb: '🌿',
+  shamrock: '☘️',
+  fourLeafClover: '🍀',
+  mapleLeaf: '🍁',
+  fallenLeaf: '🍂',
+  leaf: '🍃'
+}
 
 export const emojiPlugin: StylePlugin = {
   name: 'emoji',
 
-  handleProperty(_target, _prop, _codes, _accumulatedText) {
-    // Emoji plugin doesn't handle property access directly
-    // It provides a utility function that can be called later
-    // But we need to use the parameters to avoid TS6133 warnings
-    return undefined
-  },
+  handleProperty(_target: StyledFunction, prop: string, codes: any[], accumulatedText: string, options?: { createStyler?: Function }): StyledFunction | undefined {
+    // Handle emoji property access
+    if (prop === 'emoji' && options?.createStyler) {
+      // Create a function that can accept an emoji name or emoji character
+      const emojiHandler = (emojiNameOrChar: string) => {
+        // If it's already an emoji character, use it directly
+        // Otherwise, look it up in our emoji map
+        const emoji = emojiMap[emojiNameOrChar] || emojiNameOrChar
+        return (options.createStyler as Function)([...codes], accumulatedText + emoji)
+      }
 
-  registerCodes() {
-    // Emoji plugin doesn't add new ANSI codes
-    return {}
-  },
+        // Also add a method to get all available emojis
+        ; (emojiHandler as any).list = () => Object.keys(emojiMap)
+        ; (emojiHandler as any).random = () => {
+          const keys = Object.keys(emojiMap)
+          const randomKey = keys[Math.floor(Math.random() * keys.length)]
+          return emojiMap[randomKey]
+        }
 
-  transformCodes(_codes, _propName) {
-    // No transformation needed in this plugin
+      return emojiHandler as unknown as StyledFunction
+    }
+
+    // Handle direct emoji name access (e.g., crayon.smile)
+    if (prop in emojiMap && options?.createStyler) {
+      return (options.createStyler as Function)([...codes], accumulatedText + emojiMap[prop])
+    }
+
     return undefined
   }
 }
 
 // Self-register the plugin when imported
-pluginRegistry.register(emojiPlugin)
+register(emojiPlugin)
+
+// Augment the StyledFunction interface with emoji properties
+declare module '../types' {
+  interface StyledFunction {
+    /**
+     * Add an emoji to the text
+     * @param emojiNameOrChar The name of the emoji or the emoji character itself
+     * @example
+     * crayon.emoji('smile') // Adds a smiley face emoji
+     * crayon.emoji('❤️') // Adds a heart emoji
+     */
+    emoji: (emojiNameOrChar: string) => StyledFunction
+
+    // Direct access to common emojis (must match keys in emojiMap)
+    smile: StyledFunction
+    laugh: StyledFunction
+    wink: StyledFunction
+    heartEyes: StyledFunction
+    heart: StyledFunction
+    thumbsUp: StyledFunction
+    fire: StyledFunction
+    star: StyledFunction
+    rocket: StyledFunction
+  }
+}

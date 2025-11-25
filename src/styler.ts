@@ -1,15 +1,33 @@
 import {
   type AnsiCodes,
   isColorSupported,
-  createRgbCode,
-  createBgRgbCode,
-  parseHex,
-  validateRgb,
 } from './ansi'
 import type { StyledFunction } from './types'
-import { pluginRegistry, ansiCodes } from './plugins/registry-instance'
-import { isAutoSpaceMode } from './plugins/auto-space'
-import { BG_MODE_CODE_MARKER } from './plugins/bg-mode'
+import {
+  handleProperty,
+  processText,
+  filterMarkerCodes,
+  registeredCodes
+} from './registry'
+
+// Proxy cache to reuse proxy objects for the same code combinations
+// Use a more efficient cache key generation
+const proxyCache = new Map<string, StyledFunction>()
+
+/**
+ * Generate an efficient cache key
+ * Instead of JSON.stringify, we use a simpler approach
+ */
+function generateCacheKey(codes: AnsiCodes[], accumulatedText: string): string {
+  // For empty codes, just use accumulated text
+  if (codes.length === 0) {
+    return `text:${accumulatedText}`
+  }
+
+  // For codes, create a simple string representation
+  const codesKey = codes.map(c => `${c.open}|${c.close}`).join(',')
+  return `${codesKey}|${accumulatedText}`
+}
 
 /**
  * Apply ANSI codes to text
@@ -34,6 +52,17 @@ function applyStyle(text: string, codes: AnsiCodes[]): string {
  * @param accumulatedText - Text accumulated from previous calls (for chaining after function calls)
  */
 export function createStyler(codes: AnsiCodes[] = [], accumulatedText: string = ''): StyledFunction {
+  // Create a more efficient cache key
+  const cacheKey = generateCacheKey(codes, accumulatedText)
+
+  // Check if we have a cached proxy for this combination
+  if (proxyCache.has(cacheKey)) {
+    return proxyCache.get(cacheKey)!
+  }
+
+  // Define the custom inspect symbol
+  const inspectCustom = Symbol.for('nodejs.util.inspect.custom')
+
   // Main function that handles both regular calls and template literals
   const stylerFunction = function (
     this: unknown,
@@ -48,26 +77,15 @@ export function createStyler(codes: AnsiCodes[] = [], accumulatedText: string = 
         ''
       )
 
-      // Check if we're in auto-space mode
-      const autoSpaceMode = isAutoSpaceMode(codes)
-      let processedText = text
+      // Let plugins handle special mode behaviors
+      const pluginResult = processText(codes, text, accumulatedText)
       let styledText = ''
 
-      if (autoSpaceMode) {
-        // Add a plain space before the text if accumulatedText is not empty
-        if (accumulatedText.length > 0 && !accumulatedText.endsWith(' ')) {
-          // Apply styles to the space with no styling codes
-          const plainSpace = applyStyle(' ', [])
-          // Apply styles to the actual text with the normal codes (excluding markers)
-          const styledTextContent = applyStyle(processedText, pluginRegistry.filterMarkerCodes(codes))
-          styledText = plainSpace + styledTextContent
-        } else {
-          // Apply styles to the text with the normal codes (excluding markers)
-          styledText = applyStyle(processedText, pluginRegistry.filterMarkerCodes(codes))
-        }
+      if (pluginResult) {
+        styledText = pluginResult.styledText
       } else {
-        // Normal behavior - apply styles to the text (excluding markers)
-        styledText = applyStyle(processedText, pluginRegistry.filterMarkerCodes(codes))
+        // Fallback to default behavior - apply styles to the text (excluding markers)
+        styledText = applyStyle(text, filterMarkerCodes(codes))
       }
 
       // Return a new styler with accumulated text
@@ -77,26 +95,15 @@ export function createStyler(codes: AnsiCodes[] = [], accumulatedText: string = 
     // Handle regular function call
     const text = String(args[0] ?? '')
 
-    // Check if we're in auto-space mode
-    const autoSpaceMode = isAutoSpaceMode(codes)
-    let processedText = text
+    // Let plugins handle special mode behaviors
+    const pluginResult = processText(codes, text, accumulatedText)
     let styledText = ''
 
-    if (autoSpaceMode) {
-      // Add a plain space before the text if accumulatedText is not empty
-      if (accumulatedText.length > 0 && !accumulatedText.endsWith(' ')) {
-        // Apply styles to the space with no styling codes
-        const plainSpace = applyStyle(' ', [])
-        // Apply styles to the actual text with the normal codes (excluding markers)
-        const styledTextContent = applyStyle(processedText, pluginRegistry.filterMarkerCodes(codes))
-        styledText = plainSpace + styledTextContent
-      } else {
-        // Apply styles to the text with the normal codes (excluding markers)
-        styledText = applyStyle(processedText, pluginRegistry.filterMarkerCodes(codes))
-      }
+    if (pluginResult) {
+      styledText = pluginResult.styledText
     } else {
-      // Normal behavior - apply styles to the text (excluding markers)
-      styledText = applyStyle(processedText, pluginRegistry.filterMarkerCodes(codes))
+      // Fallback to default behavior - apply styles to the text (excluding markers)
+      styledText = applyStyle(text, filterMarkerCodes(codes))
     }
 
     // Return a new styler with accumulated text
@@ -118,12 +125,20 @@ export function createStyler(codes: AnsiCodes[] = [], accumulatedText: string = 
     enumerable: false,
   })
 
+  // Custom inspect is defined on the proxy
+
+  // Add toStringTag for better object representation
+  Object.defineProperty(stylerFunction, Symbol.toStringTag, {
+    value: 'Crayon',
+    enumerable: false,
+  })
+
   // Create proxy to intercept property access for chaining
   const proxy = new Proxy(stylerFunction, {
     get: (target, prop: string | symbol) => {
       if (typeof prop === 'symbol') {
         // @ts-expect-error - Accessing symbol properties on function
-        return target[prop]
+        return target[prop as any]
       }
 
       // Special properties for string conversion
@@ -131,15 +146,25 @@ export function createStyler(codes: AnsiCodes[] = [], accumulatedText: string = 
         return target[prop]
       }
 
+      // Handle Symbol.toPrimitive
+      if (typeof prop === 'symbol' && prop === Symbol.toPrimitive) {
+        return target[prop]
+      }
+
+      // Handle util.inspect.custom
+      const inspectCustom = Symbol.for('nodejs.util.inspect.custom')
+      if (typeof prop === 'symbol' && prop === inspectCustom) {
+        return () => accumulatedText
+      }
+
       // Prepare options for plugins
       const pluginOptions = {
         createStyler,
-        ansiCodes,
-        pluginRegistry
+        ansiCodes: registeredCodes,
       }
 
       // Let plugins handle property access
-      const pluginResult = pluginRegistry.handleProperty(
+      const pluginResult = handleProperty(
         stylerFunction as unknown as StyledFunction,
         prop as string,
         codes,
@@ -151,56 +176,25 @@ export function createStyler(codes: AnsiCodes[] = [], accumulatedText: string = 
       }
 
       // Check if it's a standard style in our combined ansiCodes
-      if (prop in ansiCodes) {
-        return createStyler([...codes, ansiCodes[prop as keyof typeof ansiCodes]], accumulatedText)
-      }
-
-      // Handle hex color utility
-      if (prop === 'hex' || prop === 'h') {
-        return (color: string) => {
-          const [r, g, b] = parseHex(color)
-          // Check if we're in background-color mode
-          const bgMode = codes.some(code => code.open === BG_MODE_CODE_MARKER)
-          // In bg-mode, use background RGB code
-          const rgbCode = bgMode ? createBgRgbCode(r, g, b) : createRgbCode(r, g, b)
-          return createStyler([...codes, rgbCode], accumulatedText)
-        }
-      }
-
-      // Handle bgHex color utility (explicit background, ignores bg-mode)
-      if (prop === 'bgHex') {
-        return (color: string) => {
-          const [r, g, b] = parseHex(color)
-          const rgbCode = createBgRgbCode(r, g, b)
-          return createStyler([...codes, rgbCode], accumulatedText)
-        }
-      }
-
-      // Handle rgb color utility
-      if (prop === 'rgb') {
-        return (r: number, g: number, b: number) => {
-          validateRgb(r, g, b)
-          // Check if we're in background-color mode
-          const bgMode = codes.some(code => code.open === BG_MODE_CODE_MARKER)
-          // In bg-mode, use background RGB code
-          const rgbCode = bgMode ? createBgRgbCode(r, g, b) : createRgbCode(r, g, b)
-          return createStyler([...codes, rgbCode], accumulatedText)
-        }
-      }
-
-      // Handle bgRgb color utility (explicit background, ignores bg-mode)
-      if (prop === 'bgRgb') {
-        return (r: number, g: number, b: number) => {
-          validateRgb(r, g, b)
-          const rgbCode = createBgRgbCode(r, g, b)
-          return createStyler([...codes, rgbCode], accumulatedText)
-        }
+      if (prop in registeredCodes) {
+        return createStyler([...codes, registeredCodes[prop as keyof typeof registeredCodes]], accumulatedText)
       }
 
       return undefined
     },
   })
 
-  // @ts-expect-error - Proxy wraps the function with style properties
-  return proxy as StyledFunction
+  // Add custom inspect method directly to the proxy
+  Object.defineProperty(proxy, inspectCustom, {
+    value: () => accumulatedText,
+    enumerable: false,
+    writable: true,
+    configurable: true
+  })
+
+  // Cache the proxy for reuse
+  const styledFunction = proxy as unknown as StyledFunction
+  proxyCache.set(cacheKey, styledFunction)
+
+  return styledFunction
 }

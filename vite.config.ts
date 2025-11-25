@@ -1,6 +1,12 @@
-import { defineConfig } from 'vite';
-import dts from 'vite-plugin-dts';
-import { resolve } from 'path';
+import { defineConfig } from 'vite'
+import dts from 'vite-plugin-dts'
+import { resolve } from 'path'
+import { readdirSync } from 'fs'
+
+// Get all plugin files
+const pluginFiles = readdirSync(resolve(__dirname, 'src/plugins'))
+  .filter(file => file.endsWith('.ts') && !file.endsWith('.test.ts'))
+  .map(file => file.replace('.ts', ''))
 
 export default defineConfig({
   plugins: [
@@ -12,16 +18,28 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        'index.full': resolve(__dirname, 'src/index.full.ts'),
+        'index.minimal': resolve(__dirname, 'src/index.minimal.ts'),
+        // Add all plugins as separate entry points
+        ...Object.fromEntries(
+          pluginFiles.map(plugin => [
+            `plugins/${plugin}`,
+            resolve(__dirname, 'src/plugins', `${plugin}.ts`)
+          ])
+        )
+      },
       name: 'Crayon',
       formats: ['es', 'cjs'],
-      fileName: (format) => {
-        if (format === 'es') return 'index.mjs';
-        if (format === 'cjs') return 'index.cjs';
-        return `index.${format}.js`;
+      fileName: (format, entryName) => {
+        if (format === 'es') return `${entryName}.mjs`
+        if (format === 'cjs') return `${entryName}.cjs`
+        return `${entryName}.${format}.js`
       },
     },
     rollupOptions: {
+      external: [],
       output: {
         preserveModules: false,
       },
@@ -29,4 +47,7 @@ export default defineConfig({
     minify: false,
     sourcemap: true,
   },
-});
+  ssr: {
+    noExternal: ['util'],
+  },
+})
