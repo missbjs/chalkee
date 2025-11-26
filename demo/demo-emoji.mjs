@@ -5,7 +5,7 @@
  * Shows how to use emojis with the Crayon styling library
  */
 
-import crayon from './dist/index.mjs'
+import crayon from '../dist/index.mjs'
 
 console.log('=== Crayon Emoji Plugin Demo ===\n')
 

@@ -1,0 +1,2 @@
+
+//# sourceMappingURL=shorthand.mjs.map

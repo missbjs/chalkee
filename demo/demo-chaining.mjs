@@ -3,7 +3,9 @@
  * Testing: red('red text').bold`is important`.r` but not `.s` this `
  */
 
-import { red, bgRed, bgBlue, bgGreen, bgYellow, as, bg } from '../dist/index.mjs';
+import crayon from '../dist/index.mjs';
+
+const { red, bgRed, bgBlue, bgGreen, bgYellow } = crayon;
 
 console.log('\n=== SENTENCE CHAINING DEMO ===\n');
 
@@ -71,8 +73,8 @@ console.log('\n=== Auto-Space (.as) Feature ===')
 console.log('\n=== Standalone as Function Examples ===')
 
 console.log('\n=== Standalone bg Function Examples ===')
-const bgExample1 = bg.red('Red background').blue('Blue background')
-console.log('bg.red("Red background").blue("Blue background")')
+const bgExample1 = bgRed('Red background').bgBlue('Blue background')
+console.log('bgRed("Red background").bgBlue("Blue background")')
 console.log('Output:', String(bgExample1))
 console.log('Escaped:', escapeAnsi(String(bgExample1)))
 
@@ -82,13 +84,13 @@ console.log('Output:', String(bgExample2))
 console.log('Escaped:', escapeAnsi(String(bgExample2)))
 
 console.log('\n=== Additional bg. Function Examples ===')
-const bgExample3 = bg.red('Red background').blue('Blue background').green('Green background')
-console.log('bg.red("Red background").blue("Blue background").green("Green background")')
+const bgExample3 = bgRed('Red background').bgBlue('Blue background').bgGreen('Green background')
+console.log('bgRed("Red background").bgBlue("Blue background").bgGreen("Green background")')
 console.log('Output:', String(bgExample3))
 console.log('Escaped:', escapeAnsi(String(bgExample3)))
 
 console.log('\nbg.hex("#FF5733")("Orange background").as.hex("#33FF57")("Green background")')
-const bgExample4 = bg.hex('#FF5733')('Orange background').as.hex('#33FF57')('Green background')
+const bgExample4 = bgRed.bg.hex('#FF5733')('Orange background').as.bg.hex('#33FF57')('Green background')
 console.log('Output:', String(bgExample4))
 console.log('Escaped:', escapeAnsi(String(bgExample4)))
 console.log('Notice the space between "Orange background" and "Green background" due to .as')

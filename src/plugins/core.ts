@@ -1,11 +1,7 @@
-/**
- * Core plugin
- * Provides core ANSI color codes with proper TypeScript augmentation
- */
 import type { StylePlugin } from './base'
 import type { AnsiCodes } from '../ansi'
-import type { StyledFunction } from '../types'
-import { register, registerCodes } from '../registry'
+import { Styler, createStyler } from '../styler'
+import { register, registerCodes, createStylerProperty } from '../registry'
 
 // Core ANSI codes - defined at module level
 const coreCodes = {
@@ -40,6 +36,8 @@ const coreCodes = {
     bgMagenta: { open: '\x1b[45m', close: '\x1b[49m' },
     bgCyan: { open: '\x1b[46m', close: '\x1b[49m' },
     bgWhite: { open: '\x1b[47m', close: '\x1b[49m' },
+    bgGray: { open: '\x1b[100m', close: '\x1b[49m' },
+    bgGrey: { open: '\x1b[100m', close: '\x1b[49m' },
 
     // Bright background colors
     bgBlackBright: { open: '\x1b[100m', close: '\x1b[49m' },
@@ -52,8 +50,55 @@ const coreCodes = {
     bgWhiteBright: { open: '\x1b[107m', close: '\x1b[49m' },
 }
 
-// Register core codes when module is imported
+// Register core codes with the registry
 registerCodes(coreCodes)
+
+// Define core color properties directly on the Styler prototype
+Object.defineProperties(Styler.prototype, {
+    // Foreground colors
+    black: createStylerProperty(coreCodes.black, { createStyler }),
+    red: createStylerProperty(coreCodes.red, { createStyler }),
+    green: createStylerProperty(coreCodes.green, { createStyler }),
+    yellow: createStylerProperty(coreCodes.yellow, { createStyler }),
+    blue: createStylerProperty(coreCodes.blue, { createStyler }),
+    magenta: createStylerProperty(coreCodes.magenta, { createStyler }),
+    cyan: createStylerProperty(coreCodes.cyan, { createStyler }),
+    white: createStylerProperty(coreCodes.white, { createStyler }),
+    gray: createStylerProperty(coreCodes.gray, { createStyler }),
+    grey: createStylerProperty(coreCodes.gray, { createStyler }),
+
+    // Bright foreground colors
+    blackBright: createStylerProperty(coreCodes.blackBright, { createStyler }),
+    redBright: createStylerProperty(coreCodes.redBright, { createStyler }),
+    greenBright: createStylerProperty(coreCodes.greenBright, { createStyler }),
+    yellowBright: createStylerProperty(coreCodes.yellowBright, { createStyler }),
+    blueBright: createStylerProperty(coreCodes.blueBright, { createStyler }),
+    magentaBright: createStylerProperty(coreCodes.magentaBright, { createStyler }),
+    cyanBright: createStylerProperty(coreCodes.cyanBright, { createStyler }),
+    whiteBright: createStylerProperty(coreCodes.whiteBright, { createStyler }),
+
+    // Background colors
+    bgBlack: createStylerProperty(coreCodes.bgBlack, { createStyler }),
+    bgRed: createStylerProperty(coreCodes.bgRed, { createStyler }),
+    bgGreen: createStylerProperty(coreCodes.bgGreen, { createStyler }),
+    bgYellow: createStylerProperty(coreCodes.bgYellow, { createStyler }),
+    bgBlue: createStylerProperty(coreCodes.bgBlue, { createStyler }),
+    bgMagenta: createStylerProperty(coreCodes.bgMagenta, { createStyler }),
+    bgCyan: createStylerProperty(coreCodes.bgCyan, { createStyler }),
+    bgWhite: createStylerProperty(coreCodes.bgWhite, { createStyler }),
+    bgGray: createStylerProperty(coreCodes.bgGray, { createStyler }),
+    bgGrey: createStylerProperty(coreCodes.bgGrey, { createStyler }),
+
+    // Bright background colors
+    bgBlackBright: createStylerProperty(coreCodes.bgBlackBright, { createStyler }),
+    bgRedBright: createStylerProperty(coreCodes.bgRedBright, { createStyler }),
+    bgGreenBright: createStylerProperty(coreCodes.bgGreenBright, { createStyler }),
+    bgYellowBright: createStylerProperty(coreCodes.bgYellowBright, { createStyler }),
+    bgBlueBright: createStylerProperty(coreCodes.bgBlueBright, { createStyler }),
+    bgMagentaBright: createStylerProperty(coreCodes.bgMagentaBright, { createStyler }),
+    bgCyanBright: createStylerProperty(coreCodes.bgCyanBright, { createStyler }),
+    bgWhiteBright: createStylerProperty(coreCodes.bgWhiteBright, { createStyler }),
+})
 
 export const corePlugin: StylePlugin = {
     name: 'core',
@@ -61,87 +106,124 @@ export const corePlugin: StylePlugin = {
     /**
      * Handle property access for core color functionality
      */
-    handleProperty(_target: StyledFunction, prop: string, codes: AnsiCodes[], accumulatedText: string, options?: { createStyler?: Function, ansiCodes?: Record<string, AnsiCodes> }): StyledFunction | undefined {
+    handleProperty(_target: Styler, prop: string, codes: AnsiCodes[], accumulatedText: string, options?: { createStyler?: Function }): Styler | undefined {
         // Handle common color properties for better performance
-        if (options?.createStyler && options.ansiCodes) {
-            // Only for root styler (no codes, no accumulated text)
+        if (options?.createStyler) {
+            // Handle root styler (no codes, no accumulated text)
             if (codes.length === 0 && accumulatedText === '') {
                 switch (prop) {
                     case 'red':
-                        return (options.createStyler as Function)([options.ansiCodes.red], '')
+                        return (options.createStyler as Function)([coreCodes.red], '')
                     case 'green':
-                        return (options.createStyler as Function)([options.ansiCodes.green], '')
+                        return (options.createStyler as Function)([coreCodes.green], '')
                     case 'blue':
-                        return (options.createStyler as Function)([options.ansiCodes.blue], '')
+                        return (options.createStyler as Function)([coreCodes.blue], '')
                     case 'yellow':
-                        return (options.createStyler as Function)([options.ansiCodes.yellow], '')
+                        return (options.createStyler as Function)([coreCodes.yellow], '')
                     case 'magenta':
-                        return (options.createStyler as Function)([options.ansiCodes.magenta], '')
+                        return (options.createStyler as Function)([coreCodes.magenta], '')
                     case 'cyan':
-                        return (options.createStyler as Function)([options.ansiCodes.cyan], '')
+                        return (options.createStyler as Function)([coreCodes.cyan], '')
                     case 'white':
-                        return (options.createStyler as Function)([options.ansiCodes.white], '')
+                        return (options.createStyler as Function)([coreCodes.white], '')
                     case 'black':
-                        return (options.createStyler as Function)([options.ansiCodes.black], '')
+                        return (options.createStyler as Function)([coreCodes.black], '')
                     case 'gray':
                     case 'grey':
-                        return (options.createStyler as Function)([options.ansiCodes.gray], '')
+                        return (options.createStyler as Function)([coreCodes.gray], '')
+                    default:
+                        // Handle other properties that might exist in coreCodes but aren't explicitly listed
+                        if (coreCodes.hasOwnProperty(prop)) {
+                            return (options.createStyler as Function)([coreCodes[prop as keyof typeof coreCodes]], '')
+                        }
+                }
+            }
+            // Handle chaining (when there are already codes)
+            else {
+                switch (prop) {
+                    case 'red':
+                        return (options.createStyler as Function)([...codes, coreCodes.red], accumulatedText)
+                    case 'green':
+                        return (options.createStyler as Function)([...codes, coreCodes.green], accumulatedText)
+                    case 'blue':
+                        return (options.createStyler as Function)([...codes, coreCodes.blue], accumulatedText)
+                    case 'yellow':
+                        return (options.createStyler as Function)([...codes, coreCodes.yellow], accumulatedText)
+                    case 'magenta':
+                        return (options.createStyler as Function)([...codes, coreCodes.magenta], accumulatedText)
+                    case 'cyan':
+                        return (options.createStyler as Function)([...codes, coreCodes.cyan], accumulatedText)
+                    case 'white':
+                        return (options.createStyler as Function)([...codes, coreCodes.white], accumulatedText)
+                    case 'black':
+                        return (options.createStyler as Function)([...codes, coreCodes.black], accumulatedText)
+                    case 'gray':
+                    case 'grey':
+                        return (options.createStyler as Function)([...codes, coreCodes.gray], accumulatedText)
+                    default:
+                        // Handle other properties that might exist in coreCodes but aren't explicitly listed
+                        if (coreCodes.hasOwnProperty(prop)) {
+                            return (options.createStyler as Function)([...codes, coreCodes[prop as keyof typeof coreCodes]], accumulatedText)
+                        }
                 }
             }
         }
 
         // Core plugin doesn't need special handling methods for better performance in other cases
         return undefined
-    }
+    },
+
 }
 
 // Self-register the plugin when imported
 register(corePlugin)
 
-// Augment the StyledFunction interface with core color properties
+// Augment the Styler interface with core color properties
 // This provides IntelliSense for the core colors
-declare module '../types' {
-    interface StyledFunction {
+declare module '../styler' {
+    interface Styler {
         // Foreground colors
-        black: StyledFunction
-        red: StyledFunction
-        green: StyledFunction
-        yellow: StyledFunction
-        blue: StyledFunction
-        magenta: StyledFunction
-        cyan: StyledFunction
-        white: StyledFunction
-        gray: StyledFunction
-        grey: StyledFunction
+        black: Styler
+        red: Styler
+        green: Styler
+        yellow: Styler
+        blue: Styler
+        magenta: Styler
+        cyan: Styler
+        white: Styler
+        gray: Styler
+        grey: Styler
 
         // Bright foreground colors
-        blackBright: StyledFunction
-        redBright: StyledFunction
-        greenBright: StyledFunction
-        yellowBright: StyledFunction
-        blueBright: StyledFunction
-        magentaBright: StyledFunction
-        cyanBright: StyledFunction
-        whiteBright: StyledFunction
+        blackBright: Styler
+        redBright: Styler
+        greenBright: Styler
+        yellowBright: Styler
+        blueBright: Styler
+        magentaBright: Styler
+        cyanBright: Styler
+        whiteBright: Styler
 
         // Background colors
-        bgBlack: StyledFunction
-        bgRed: StyledFunction
-        bgGreen: StyledFunction
-        bgYellow: StyledFunction
-        bgBlue: StyledFunction
-        bgMagenta: StyledFunction
-        bgCyan: StyledFunction
-        bgWhite: StyledFunction
+        bgBlack: Styler
+        bgRed: Styler
+        bgGreen: Styler
+        bgYellow: Styler
+        bgBlue: Styler
+        bgMagenta: Styler
+        bgCyan: Styler
+        bgWhite: Styler
+        bgGray: Styler
+        bgGrey: Styler
 
         // Bright background colors
-        bgBlackBright: StyledFunction
-        bgRedBright: StyledFunction
-        bgGreenBright: StyledFunction
-        bgYellowBright: StyledFunction
-        bgBlueBright: StyledFunction
-        bgMagentaBright: StyledFunction
-        bgCyanBright: StyledFunction
-        bgWhiteBright: StyledFunction
+        bgBlackBright: Styler
+        bgRedBright: Styler
+        bgGreenBright: Styler
+        bgYellowBright: Styler
+        bgBlueBright: Styler
+        bgMagentaBright: Styler
+        bgCyanBright: Styler
+        bgWhiteBright: Styler
     }
 }

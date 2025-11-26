@@ -6,7 +6,6 @@ import { describe, test } from 'node:test'
 import assert from 'node:assert'
 // Import from the full version to get all plugins registered
 import crayon from './index.full'
-import { red, blue, bold, hex, rgb, h, b, i, u } from './index.full'
 
 // Disable color support for testing
 process.env.NO_COLOR = '1'
@@ -17,7 +16,7 @@ describe('Crayon', () => {
   })
 
   test('should work with function call', () => {
-    const result = red('Hello')
+    const result = crayon.red('Hello')
     assert.strictEqual(String(result), 'Hello')
   })
 

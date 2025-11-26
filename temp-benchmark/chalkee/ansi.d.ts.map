@@ -1,0 +1,1 @@
+{"version":3,"file":"ansi.d.ts","sourceRoot":"","sources":["../src/ansi.ts"],"names":[],"mappings":"AAAA;;GAEG;AAIH,eAAO,MAAM,SAAS,IAAc,CAAA;AAEpC,MAAM,WAAW,SAAS;IACxB,IAAI,EAAE,MAAM,CAAA;IACZ,KAAK,EAAE,MAAM,CAAA;CACd;AAED,MAAM,MAAM,SAAS,GAAG,MAAM,OAAO,SAAS,CAAA;AAE9C;;GAEG;AACH,wBAAgB,gBAAgB,IAAI,OAAO,CAsB1C"}

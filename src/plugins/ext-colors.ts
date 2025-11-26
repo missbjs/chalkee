@@ -3,7 +3,8 @@
  * Provides extended color codes with proper TypeScript augmentation
  */
 import type { StylePlugin } from './base'
-import { register, registerCodes } from '../registry'
+import { Styler } from '../styler'
+import { register, registerCodes, createStylerProperty } from '../registry'
 
 // Custom ANSI codes - defined at module level
 const customCodes = {
@@ -32,6 +33,30 @@ const customCodes = {
 // Register custom codes when module is imported
 registerCodes(customCodes)
 
+// Define custom color properties directly on the Styler prototype
+Object.defineProperties(Styler.prototype, {
+    // Custom foreground colors
+    pink: createStylerProperty(customCodes.pink, { createStyler: Styler }),
+    orange: createStylerProperty(customCodes.orange, { createStyler: Styler }),
+    purple: createStylerProperty(customCodes.purple, { createStyler: Styler }),
+    lime: createStylerProperty(customCodes.lime, { createStyler: Styler }),
+    coral: createStylerProperty(customCodes.coral, { createStyler: Styler }),
+    teal: createStylerProperty(customCodes.teal, { createStyler: Styler }),
+
+    // Custom background colors
+    bgPink: createStylerProperty(customCodes.bgPink, { createStyler: Styler }),
+    bgOrange: createStylerProperty(customCodes.bgOrange, { createStyler: Styler }),
+    bgPurple: createStylerProperty(customCodes.bgPurple, { createStyler: Styler }),
+    bgLime: createStylerProperty(customCodes.bgLime, { createStyler: Styler }),
+    bgCoral: createStylerProperty(customCodes.bgCoral, { createStyler: Styler }),
+    bgTeal: createStylerProperty(customCodes.bgTeal, { createStyler: Styler }),
+
+    // Custom modifiers
+    blink: createStylerProperty(customCodes.blink, { createStyler: Styler }),
+    overline: createStylerProperty(customCodes.overline, { createStyler: Styler }),
+    doubleUnderline: createStylerProperty(customCodes.doubleUnderline, { createStyler: Styler })
+})
+
 export const customColorsPlugin: StylePlugin = {
     name: 'customColors',
 }
@@ -39,36 +64,36 @@ export const customColorsPlugin: StylePlugin = {
 // Self-register the plugin when imported
 register(customColorsPlugin)
 
-// Augment the StyledFunction interface with custom color properties
+// Augment the Styler interface with custom color properties
 // This provides IntelliSense for the custom colors
-declare module '../types' {
-    interface StyledFunction {
+declare module '../styler' {
+    interface Styler {
         // Core color functions
-        hex: (color: string) => StyledFunction
-        rgb: (r: number, g: number, b: number) => StyledFunction
-        bgHex: (color: string) => StyledFunction
-        bgRgb: (r: number, g: number, b: number) => StyledFunction
-        h: (color: string) => StyledFunction
+        hex: (color: string) => Styler
+        rgb: (r: number, g: number, b: number) => Styler
+        bgHex: (color: string) => Styler
+        bgRgb: (r: number, g: number, b: number) => Styler
+        h: (color: string) => Styler
 
         // Custom foreground colors
-        pink: StyledFunction
-        orange: StyledFunction
-        purple: StyledFunction
-        lime: StyledFunction
-        coral: StyledFunction
-        teal: StyledFunction
+        pink: Styler
+        orange: Styler
+        purple: Styler
+        lime: Styler
+        coral: Styler
+        teal: Styler
 
         // Custom background colors
-        bgPink: StyledFunction
-        bgOrange: StyledFunction
-        bgPurple: StyledFunction
-        bgLime: StyledFunction
-        bgCoral: StyledFunction
-        bgTeal: StyledFunction
+        bgPink: Styler
+        bgOrange: Styler
+        bgPurple: Styler
+        bgLime: Styler
+        bgCoral: Styler
+        bgTeal: Styler
 
         // Custom modifiers
-        blink: StyledFunction
-        overline: StyledFunction
-        doubleUnderline: StyledFunction
+        blink: Styler
+        overline: Styler
+        doubleUnderline: Styler
     }
 }

@@ -5,7 +5,7 @@
  * Based on chalk's rainbow example but using Crayon's API
  */
 
-import { createRgbCode, hslToRgb } from './dist/index.mjs';
+import { createRgbCode, hslToRgb } from '../dist/index.mjs';
 
 // Characters to ignore when applying rainbow effect (spaces, punctuation, etc.)
 const ignoreChars = /[^!-~]/g;

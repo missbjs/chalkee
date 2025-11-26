@@ -77,8 +77,11 @@ console.timeEnd('chalk-complex');
 // For Crayon, we'll test using a direct import approach
 import crayon from './chalkee/index.mjs';
 // Import plugins to register their codes
-import './chalkee/plugins/core.mjs';
 import './chalkee/plugins/modifiers.mjs';
+import './chalkee/plugins/core.mjs';
+import './chalkee/plugins/ext-colors.mjs';
+import './chalkee/plugins/bg.mjs';
+import './chalkee/plugins/util.mjs';
 
 // Simple color test
 console.time('crayon-simple');

@@ -5,7 +5,7 @@
  * Shows how users can get proper IntelliSense with custom color codes
  */
 
-import crayon from './dist/index.mjs'
+import crayon from '../dist/index.mjs'
 
 // In a real application, users would import and register the plugin:
 // import './plugins/extended-colors' // This registers the plugin

@@ -3,7 +3,7 @@
  * Adds emoji support to styling
  */
 import type { StylePlugin } from './base'
-import type { StyledFunction } from '../types'
+import { Styler } from '../styler'
 import { register } from '../registry'
 
 // Simple emoji mapping for common emojis
@@ -129,10 +129,48 @@ const emojiMap: Record<string, string> = {
   leaf: '🍃'
 }
 
+// Define emoji properties directly on the Styler prototype
+Object.defineProperties(Styler.prototype, {
+  emoji: {
+    get() {
+      // Create a function that can accept an emoji name or emoji character
+      const emojiHandler = (emojiNameOrChar: string) => {
+        // If it's already an emoji character, use it directly
+        // Otherwise, look it up in our emoji map
+        const emoji = emojiMap[emojiNameOrChar] || emojiNameOrChar
+        return new Styler([], emoji)
+      }
+
+        // Also add a method to get all available emojis
+        ; (emojiHandler as any).list = () => Object.keys(emojiMap)
+        ; (emojiHandler as any).random = () => {
+          const keys = Object.keys(emojiMap)
+          const randomKey = keys[Math.floor(Math.random() * keys.length)]
+          return emojiMap[randomKey]
+        }
+
+      return emojiHandler
+    },
+    enumerable: true,
+    configurable: true
+  }
+})
+
+// Add direct emoji name access properties
+for (const [emojiName, emojiChar] of Object.entries(emojiMap)) {
+  Object.defineProperty(Styler.prototype, emojiName, {
+    get() {
+      return new Styler([], emojiChar)
+    },
+    enumerable: true,
+    configurable: true
+  })
+}
+
 export const emojiPlugin: StylePlugin = {
   name: 'emoji',
 
-  handleProperty(_target: StyledFunction, prop: string, codes: any[], accumulatedText: string, options?: { createStyler?: Function }): StyledFunction | undefined {
+  handleProperty(_target: Styler, prop: string, codes: any[], accumulatedText: string, options?: { createStyler?: Function }): Styler | undefined {
     // Handle emoji property access
     if (prop === 'emoji' && options?.createStyler) {
       // Create a function that can accept an emoji name or emoji character
@@ -151,7 +189,7 @@ export const emojiPlugin: StylePlugin = {
           return emojiMap[randomKey]
         }
 
-      return emojiHandler as unknown as StyledFunction
+      return emojiHandler as unknown as Styler
     }
 
     // Handle direct emoji name access (e.g., crayon.smile)
@@ -166,9 +204,9 @@ export const emojiPlugin: StylePlugin = {
 // Self-register the plugin when imported
 register(emojiPlugin)
 
-// Augment the StyledFunction interface with emoji properties
-declare module '../types' {
-  interface StyledFunction {
+// Augment the Styler interface with emoji properties
+declare module '../styler' {
+  interface Styler {
     /**
      * Add an emoji to the text
      * @param emojiNameOrChar The name of the emoji or the emoji character itself
@@ -176,17 +214,17 @@ declare module '../types' {
      * crayon.emoji('smile') // Adds a smiley face emoji
      * crayon.emoji('❤️') // Adds a heart emoji
      */
-    emoji: (emojiNameOrChar: string) => StyledFunction
+    emoji: (emojiNameOrChar: string) => Styler
 
     // Direct access to common emojis (must match keys in emojiMap)
-    smile: StyledFunction
-    laugh: StyledFunction
-    wink: StyledFunction
-    heartEyes: StyledFunction
-    heart: StyledFunction
-    thumbsUp: StyledFunction
-    fire: StyledFunction
-    star: StyledFunction
-    rocket: StyledFunction
+    smile: Styler
+    laugh: Styler
+    wink: Styler
+    heartEyes: Styler
+    heart: Styler
+    thumbsUp: Styler
+    fire: Styler
+    star: Styler
+    rocket: Styler
   }
 }

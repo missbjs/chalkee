@@ -6,7 +6,7 @@
  * Note: In a real implementation, plugins would be registered at build time
  */
 
-import crayon from './dist/index.mjs';
+import crayon from '../dist/index.mjs';
 
 console.log('\n=== Custom Plugin Concept Demo ===\n');
 

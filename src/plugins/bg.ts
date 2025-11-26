@@ -1,5 +1,5 @@
 import type { StylePlugin } from './base'
-import type { StyledFunction } from '../types'
+import { Styler } from '../styler'
 import type { AnsiCodes } from '../ansi'
 import { registeredCodes, register } from '../registry'
 // Removed direct import of coreColorsPlugin to avoid circular dependencies
@@ -7,10 +7,24 @@ import { registeredCodes, register } from '../registry'
 // Background mode marker
 const BG_MODE_MARKER = '\x00BG\x00'
 
+// Define background color properties directly on the Styler prototype
+Object.defineProperties(Styler.prototype, {
+  // bg namespace for dynamic background colors
+  bg: {
+    get() {
+      // Create a special marker for background-color mode
+      const bgModeCode = { open: BG_MODE_MARKER, close: '' }
+      return new Styler([bgModeCode], '')
+    },
+    enumerable: true,
+    configurable: true
+  }
+})
+
 export const bgPlugin: StylePlugin = {
   name: 'bg',
 
-  handleProperty(_target: StyledFunction, prop: string, codes: AnsiCodes[], accumulatedText: string, options?: { createStyler?: Function, ansiCodes?: Record<string, AnsiCodes>, pluginRegistry?: any }) {
+  handleProperty(_target: Styler, prop: string, codes: AnsiCodes[], accumulatedText: string, options?: { createStyler?: Function, ansiCodes?: Record<string, AnsiCodes> }) {
     // Handle bg namespace - creates a persistent background-color mode
     if (prop === 'bg') {
       // Use the passed createStyler function to avoid circular dependencies
@@ -28,7 +42,7 @@ export const bgPlugin: StylePlugin = {
     const coreAnsiCodes = registeredCodes
 
     // If in bg-mode and accessing a foreground color, convert to background color
-    if (bgMode && prop in coreAnsiCodes && !prop.startsWith('bg')) {
+    if (bgMode && options?.ansiCodes && prop in options.ansiCodes && !prop.startsWith('bg')) {
       // Check if it's a foreground color (not a modifier like bold, italic, etc.)
       const isForegroundColor = [
         'black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white', 'gray', 'grey',
@@ -38,7 +52,7 @@ export const bgPlugin: StylePlugin = {
       if (isForegroundColor) {
         // Convert to background color: red -> bgRed, redBright -> bgRedBright
         const bgStyleName = ('bg' + prop.charAt(0).toUpperCase() + prop.slice(1)) as keyof typeof coreAnsiCodes
-        if (bgStyleName in coreAnsiCodes && options?.createStyler) {
+        if (bgStyleName in coreAnsiCodes && options.createStyler) {
           return (options.createStyler as Function)([...codes, coreAnsiCodes[bgStyleName]], accumulatedText)
         }
       }
@@ -50,7 +64,8 @@ export const bgPlugin: StylePlugin = {
   isMarkerCode(code: AnsiCodes) {
     // Identify our bg-mode marker code
     return code.open === BG_MODE_MARKER
-  }
+  },
+
 }
 
 // Self-register the plugin when imported
@@ -59,28 +74,27 @@ register(bgPlugin)
 // Add BG_MODE_CODE_MARKER as a property of the plugin so other plugins can access it
 Object.assign(bgPlugin, { BG_MODE_CODE_MARKER: BG_MODE_MARKER })
 
-// Augment the StyledFunction interface with bg mode property
-declare module '../types' {
-  interface StyledFunction {
+// Augment the Styler interface with bg mode property
+declare module '../styler' {
+  interface Styler {
     // Nested namespace for background colors
     bg: {
-      black: StyledFunction
-      red: StyledFunction
-      green: StyledFunction
-      yellow: StyledFunction
-      blue: StyledFunction
-      magenta: StyledFunction
-      cyan: StyledFunction
-      white: StyledFunction
-      blackBright: StyledFunction
-      redBright: StyledFunction
-      greenBright: StyledFunction
-      yellowBright: StyledFunction
-      blueBright: StyledFunction
-      magentaBright: StyledFunction
-      cyanBright: StyledFunction
-      whiteBright: StyledFunction
-
+      black: Styler
+      red: Styler
+      green: Styler
+      yellow: Styler
+      blue: Styler
+      magenta: Styler
+      cyan: Styler
+      white: Styler
+      blackBright: Styler
+      redBright: Styler
+      greenBright: Styler
+      yellowBright: Styler
+      blueBright: Styler
+      magentaBright: Styler
+      cyanBright: Styler
+      whiteBright: Styler
     }
   }
 }

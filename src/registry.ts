@@ -3,10 +3,15 @@
  */
 import type { StylePlugin } from './plugins/base'
 import type { AnsiCodes } from './ansi'
-import type { StyledFunction } from './types'
+import type { Styler } from './styler'
 
 // Plugin storage
 export let plugins: StylePlugin[] = []
+
+// Store plugins in a global variable that can be accessed by the styler
+if (typeof globalThis !== 'undefined') {
+  (globalThis as any).__CRAYON_PLUGINS__ = plugins
+}
 
 // Flag to track if plugins have changed
 
@@ -21,11 +26,28 @@ export function registerCodes(newCodes: Record<string, AnsiCodes>): void {
 /** Register a new plugin */
 export function register(plugin: StylePlugin): void {
   plugins.push(plugin)
+
+  // Also store in global variable
+  if (typeof globalThis !== 'undefined') {
+    (globalThis as any).__CRAYON_PLUGINS__ = plugins
+  }
 }
+
+/**
+ * Helper function to create styler properties
+ * This is a shared utility function used by plugins to attach properties directly to styler functions
+ */
+export const createStylerProperty = (ansiCode: AnsiCodes, options: { createStyler: Function }) => ({
+  get() {
+    return (options.createStyler as Function)([ansiCode], '')
+  },
+  enumerable: true,
+  configurable: true
+})
 
 /** Handle property access through registered plugins */
 export function handleProperty(
-  target: StyledFunction,
+  target: Styler,
   prop: string,
   codes: AnsiCodes[],
   accumulatedText: string,
@@ -34,7 +56,7 @@ export function handleProperty(
     ansiCodes?: Record<string, AnsiCodes>,
     pluginRegistry?: any
   }
-): StyledFunction | undefined {
+): Styler | undefined {
   // Quick exit if no plugins
   if (plugins.length === 0) {
     return undefined

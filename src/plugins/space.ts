@@ -4,7 +4,7 @@
  */
 import type { StylePlugin } from './base'
 import type { AnsiCodes } from '../ansi'
-import type { StyledFunction } from '../types'
+import { Styler } from '../styler'
 import { register } from '../registry'
 
 // Space mode marker
@@ -13,7 +13,7 @@ const SPACE_MARKER = '\x00AS\x00'
 export const spacePlugin: StylePlugin = {
   name: 'space',
 
-  handleProperty(_target: StyledFunction, prop: string, codes: AnsiCodes[], accumulatedText: string, options?: { createStyler?: Function, ansiCodes?: Record<string, AnsiCodes>, pluginRegistry?: any }) {
+  handleProperty(_target: Styler, prop: string, codes: AnsiCodes[], accumulatedText: string, options?: { createStyler?: Function, ansiCodes?: Record<string, AnsiCodes>, pluginRegistry?: any }) {
     // Handle space (.as) - creates a persistent mode that adds spaces until reset
     if (prop === 'as') {
       // Use the passed createStyler function to avoid circular dependencies
@@ -81,10 +81,10 @@ function applyStyle(text: string, codes: AnsiCodes[]): string {
   return `${openCodes}${text}${closeCodes}`
 }
 
-// Augment the StyledFunction interface with space property
-declare module '../types' {
-  interface StyledFunction {
+// Augment the Styler interface with space property
+declare module '../styler' {
+  interface Styler {
     // Space method
-    as: StyledFunction
+    as: Styler
   }
 }

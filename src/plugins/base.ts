@@ -2,7 +2,16 @@
  * Base plugin interface for extending Crayon functionality
  */
 import type { AnsiCodes } from '../ansi'
-import type { StyledFunction } from '../types'
+import type { Styler } from '../styler'
+
+/**
+ * Options for the attachProperties method
+ * This defines the shared options structure used by all plugins when attaching properties
+ */
+export interface AttachPropertiesOptions {
+  createStyler: Function
+  ansiCodes?: Record<string, AnsiCodes>
+}
 
 export interface StylePlugin {
   /** Unique name of the plugin */
@@ -13,14 +22,14 @@ export interface StylePlugin {
    * Return undefined to let other plugins or core handle it
    */
   handleProperty?(
-    target: StyledFunction,
+    target: Styler,
     prop: string,
     codes: AnsiCodes[],
     accumulatedText: string,
     options?: {
       createStyler?: Function
     }
-  ): StyledFunction | undefined
+  ): Styler | undefined
 
   /**
    * Check if a code is a marker code that should be filtered when rendering

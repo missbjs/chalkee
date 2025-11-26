@@ -1,19 +1,13 @@
-/**
- * Crayon - Minimal entry point
- * Only includes core functionality, plugins must be imported separately
- */
 import { createStyler } from './styler'
-import type { Crayon } from './types'
-import { register } from './registry'
+import type { Styler } from './styler'
+// Import core plugin only for minimal build
+import './plugins/core'
 
 // Create the main crayon instance
-const crayon = createStyler() as Crayon
+const crayon = createStyler() as Styler
 
 // Export default crayon object
 export default crayon
 
 // Export types
-export type { StyledFunction, Crayon } from './types'
-
-// Export utility functions
-export { register }
+export type { Styler } from './styler'

@@ -4,13 +4,13 @@
  */
 import type { StylePlugin } from './base'
 import type { AnsiCodes } from '../ansi'
-import type { StyledFunction } from '../types'
+import { Styler, createStyler } from '../styler'
 import { register, plugins } from '../registry'
 
 /**
  * Create RGB foreground ANSI code
  */
-export function createRgbCode(r: number, g: number, b: number): AnsiCodes {
+function createRgbCode(r: number, g: number, b: number): AnsiCodes {
   return {
     open: `\x1b[38;2;${r};${g};${b}m`,
     close: '\x1b[39m',
@@ -20,7 +20,7 @@ export function createRgbCode(r: number, g: number, b: number): AnsiCodes {
 /**
  * Create RGB background ANSI code
  */
-export function createBgRgbCode(r: number, g: number, b: number): AnsiCodes {
+function createBgRgbCode(r: number, g: number, b: number): AnsiCodes {
   return {
     open: `\x1b[48;2;${r};${g};${b}m`,
     close: '\x1b[49m',
@@ -30,7 +30,7 @@ export function createBgRgbCode(r: number, g: number, b: number): AnsiCodes {
 /**
  * Parse hex color string to RGB values
  */
-export function parseHex(hex: string): [number, number, number] {
+function parseHex(hex: string): [number, number, number] {
   // Remove # if present
   hex = hex.replace(/^#/, '')
 
@@ -60,7 +60,7 @@ export function parseHex(hex: string): [number, number, number] {
 /**
  * Validate RGB values
  */
-export function validateRgb(r: number, g: number, b: number): void {
+function validateRgb(r: number, g: number, b: number): void {
   if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
     throw new Error(`RGB values must be between 0 and 255. Got: ${r}, ${g}, ${b}`)
   }
@@ -72,7 +72,7 @@ export function validateRgb(r: number, g: number, b: number): void {
  * @param s Saturation (0-100)
  * @param l Lightness (0-100)
  */
-export function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
   h = h % 360
   if (h < 0) h += 360
   s = Math.max(0, Math.min(100, s))
@@ -83,18 +83,31 @@ export function hslToRgb(h: number, s: number, l: number): [number, number, numb
   const m = l / 100 - c / 2
 
   let r = 0, g = 0, b = 0
+
   if (h < 60) {
-    r = c; g = x; b = 0
+    r = c
+    g = x
+    b = 0
   } else if (h < 120) {
-    r = x; g = c; b = 0
+    r = x
+    g = c
+    b = 0
   } else if (h < 180) {
-    r = 0; g = c; b = x
+    r = 0
+    g = c
+    b = x
   } else if (h < 240) {
-    r = 0; g = x; b = c
+    r = 0
+    g = x
+    b = c
   } else if (h < 300) {
-    r = x; g = 0; b = c
+    r = x
+    g = 0
+    b = c
   } else {
-    r = c; g = 0; b = x
+    r = c
+    g = 0
+    b = x
   }
 
   return [
@@ -104,6 +117,90 @@ export function hslToRgb(h: number, s: number, l: number): [number, number, numb
   ]
 }
 
+// Function to dynamically get BG_MODE_CODE_MARKER from bg plugin
+function getBgModeCodeMarker(): string | undefined {
+  // Find the bg plugin in the plugins array
+  const bgPlugin = plugins.find(plugin => plugin.name === 'bg')
+
+  // If the bg plugin is found and has the marker, return it
+  if (bgPlugin && (bgPlugin as any).BG_MODE_CODE_MARKER) {
+    return (bgPlugin as any).BG_MODE_CODE_MARKER
+  }
+
+  return undefined
+}
+
+// Define color utility properties directly on the Styler prototype
+Object.defineProperties(Styler.prototype, {
+  hex: {
+    get() {
+      const handler = (color: string) => {
+        const [r, g, b] = parseHex(color)
+        const rgbCode = createRgbCode(r, g, b)
+        return createStyler([rgbCode], '')
+      }
+      return handler
+    },
+    enumerable: true,
+    configurable: true
+  },
+
+  h: {
+    get() {
+      const handler = (color: string) => {
+        const [r, g, b] = parseHex(color)
+        const rgbCode = createRgbCode(r, g, b)
+        return createStyler([rgbCode], '')
+      }
+      return handler
+    },
+    enumerable: true,
+    configurable: true
+  },
+
+  bgHex: {
+    get() {
+      const handler = (color: string) => {
+        const [r, g, b] = parseHex(color)
+        const rgbCode = createBgRgbCode(r, g, b)
+        return createStyler([rgbCode], '')
+      }
+      return handler
+    },
+    enumerable: true,
+    configurable: true
+  },
+
+  rgb: {
+    get() {
+      const handler = (r: number, g: number, b: number) => {
+        validateRgb(r, g, b)
+        const rgbCode = createRgbCode(r, g, b)
+        return createStyler([rgbCode], '')
+      }
+      return handler
+    },
+    enumerable: true,
+    configurable: true
+  },
+
+  bgRgb: {
+    get() {
+      const handler = (r: number, g: number, b: number) => {
+        validateRgb(r, g, b)
+        const rgbCode = createBgRgbCode(r, g, b)
+        return createStyler([rgbCode], '')
+      }
+      return handler
+    },
+    enumerable: true,
+    configurable: true
+  }
+})
+
+// Export the utility functions so they can be imported directly
+export { createRgbCode, createBgRgbCode, parseHex, validateRgb, hslToRgb }
+
 export const utilPlugin: StylePlugin = {
   name: 'util',
 
@@ -111,7 +208,7 @@ export const utilPlugin: StylePlugin = {
    * Handle property access for color utilities
    * Return undefined to let the core system handle it through ansiCodes
    */
-  handleProperty(_target: StyledFunction, prop: string, codes: AnsiCodes[], accumulatedText: string, options?: { createStyler?: Function, ansiCodes?: Record<string, AnsiCodes>, pluginRegistry?: any }): StyledFunction | undefined {
+  handleProperty(_target: Styler, prop: string, codes: AnsiCodes[], accumulatedText: string, options?: { createStyler?: Function, ansiCodes?: Record<string, AnsiCodes>, pluginRegistry?: any }): Styler | undefined {
     // Use the passed createStyler function to avoid circular dependencies
     if (!options?.createStyler) {
       return undefined
@@ -128,7 +225,7 @@ export const utilPlugin: StylePlugin = {
         const rgbCode = bgMode ? createBgRgbCode(r, g, b) : createRgbCode(r, g, b)
         return (options.createStyler as Function)([...codes, rgbCode], accumulatedText)
       }
-      return handler as unknown as StyledFunction
+      return handler as unknown as Styler
     }
 
     // Handle bgHex color utility (explicit background, ignores bg-mode)
@@ -138,7 +235,7 @@ export const utilPlugin: StylePlugin = {
         const rgbCode = createBgRgbCode(r, g, b)
         return (options.createStyler as Function)([...codes, rgbCode], accumulatedText)
       }
-      return handler as unknown as StyledFunction
+      return handler as unknown as Styler
     }
 
     // Handle rgb color utility
@@ -152,7 +249,7 @@ export const utilPlugin: StylePlugin = {
         const rgbCode = bgMode ? createBgRgbCode(r, g, b) : createRgbCode(r, g, b)
         return (options.createStyler as Function)([...codes, rgbCode], accumulatedText)
       }
-      return handler as unknown as StyledFunction
+      return handler as unknown as Styler
     }
 
     // Handle bgRgb color utility (explicit background, ignores bg-mode)
@@ -162,38 +259,25 @@ export const utilPlugin: StylePlugin = {
         const rgbCode = createBgRgbCode(r, g, b)
         return (options.createStyler as Function)([...codes, rgbCode], accumulatedText)
       }
-      return handler as unknown as StyledFunction
+      return handler as unknown as Styler
     }
 
     return undefined
-  }
+  },
 }
 
 // Self-register the plugin when imported
 register(utilPlugin)
 
-// Augment the StyledFunction interface with color utility properties
+// Augment the Styler interface with color utility properties
 // This provides IntelliSense for the color utilities
-declare module '../types' {
-  interface StyledFunction {
+declare module '../styler' {
+  interface Styler {
     // Color utilities
-    hex: (color: string) => StyledFunction
-    h: (color: string) => StyledFunction
-    bgHex: (color: string) => StyledFunction
-    rgb: (r: number, g: number, b: number) => StyledFunction
-    bgRgb: (r: number, g: number, b: number) => StyledFunction
+    hex: (color: string) => Styler
+    h: (color: string) => Styler
+    bgHex: (color: string) => Styler
+    rgb: (r: number, g: number, b: number) => Styler
+    bgRgb: (r: number, g: number, b: number) => Styler
   }
-}
-
-// Function to dynamically get BG_MODE_CODE_MARKER from bg plugin
-function getBgModeCodeMarker(): string | undefined {
-  // Find the bg plugin in the plugins array
-  const bgPlugin = plugins.find(plugin => plugin.name === 'bg')
-
-  // If the bg plugin is found and has the marker, return it
-  if (bgPlugin && (bgPlugin as any).BG_MODE_CODE_MARKER) {
-    return (bgPlugin as any).BG_MODE_CODE_MARKER
-  }
-
-  return undefined
 }
