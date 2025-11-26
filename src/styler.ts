@@ -7,6 +7,7 @@ import {
   processText,
   filterMarkerCodes,
   registeredCodes,
+  plugins,
 } from './registry'
 
 // Cache for proxy objects to improve performance
@@ -162,7 +163,7 @@ export function createStyler(codes: AnsiCodes[] = [], accumulatedText: string = 
   }
 
   // Create the main function that handles both regular calls and template literals
-  const stylerFunction = function (...args: [string] | [TemplateStringsArray, ...unknown[]]) {
+  function stylerFunction(...args: [string] | [TemplateStringsArray, ...unknown[]]) {
     // Handle template literal call
     if (Array.isArray(args[0]) && 'raw' in args[0]) {
       const strings = args[0] as TemplateStringsArray
@@ -203,7 +204,7 @@ export function createStyler(codes: AnsiCodes[] = [], accumulatedText: string = 
 
     // Return a new styler with accumulated text
     return createStyler(codes, accumulatedText + styledText)
-  } as any
+  }
 
   // Add Symbol.toStringTag for better object representation
   Object.defineProperty(stylerFunction, Symbol.toStringTag, {
@@ -211,74 +212,72 @@ export function createStyler(codes: AnsiCodes[] = [], accumulatedText: string = 
     enumerable: false
   })
 
-  // Create proxy to handle property access through plugins
-  const proxy = new Proxy(stylerFunction, {
-    get: (target, prop) => {
-      // Handle symbol properties
-      if (typeof prop === 'symbol') {
-        return target[prop]
-      }
-
-      // Handle built-in methods
-      if (prop === 'toString' || prop === 'valueOf') {
-        return () => accumulatedText
-      }
-
-      // Handle Symbol.toPrimitive
-      if (typeof prop === 'symbol' && prop === Symbol.toPrimitive) {
-        return (hint: string) => {
-          if (hint === 'string' || hint === 'default') {
-            return accumulatedText
-          }
-          return accumulatedText
-        }
-      }
-
-      // Handle Node.js util.inspect
-      const inspectCustom = Symbol.for('nodejs.util.inspect.custom')
-      if (typeof prop === 'symbol' && prop === inspectCustom) {
-        return () => accumulatedText
-      }
-
-      // Let plugins handle property access
-      const pluginOptions = {
-        createStyler,
-        ansiCodes: registeredCodes
-      }
-
-      const pluginResult = handleProperty(
-        target,
-        prop,
-        codes,
-        accumulatedText,
-        pluginOptions
-      )
-
-      if (pluginResult !== undefined) {
-        return pluginResult
-      }
-
-      // Handle registered ANSI codes
-      if (prop in registeredCodes) {
-        return createStyler([...codes, registeredCodes[prop]], accumulatedText)
-      }
-
-      // Property not found
-      return undefined
-    }
-  })
-
-  // Add custom inspect method for Node.js util.inspect
-  const inspectCustom = Symbol.for('nodejs.util.inspect.custom')
-  Object.defineProperty(proxy, inspectCustom, {
+  // Add built-in methods directly to the function
+  Object.defineProperty(stylerFunction, 'toString', {
     value: () => accumulatedText,
     enumerable: false,
     writable: true,
     configurable: true
   })
 
-  // Cache the proxy for performance
-  proxyCache.set(cacheKey, proxy)
+  Object.defineProperty(stylerFunction, 'valueOf', {
+    value: () => accumulatedText,
+    enumerable: false,
+    writable: true,
+    configurable: true
+  })
 
-  return proxy
+  Object.defineProperty(stylerFunction, Symbol.toPrimitive, {
+    value: (hint: string) => {
+      if (hint === 'string' || hint === 'default') {
+        return accumulatedText
+      }
+      return accumulatedText
+    },
+    enumerable: false,
+    writable: true,
+    configurable: true
+  })
+
+  // Handle Node.js util.inspect
+  const inspectCustom = Symbol.for('nodejs.util.inspect.custom')
+  Object.defineProperty(stylerFunction, inspectCustom, {
+    value: () => accumulatedText,
+    enumerable: false,
+    writable: true,
+    configurable: true
+  })
+
+  // Let plugins attach their properties directly to this function
+  // This replaces the proxy-based approach with direct property attachment for better performance
+  const pluginOptions = {
+    createStyler,
+    ansiCodes: registeredCodes
+  }
+
+  // Allow each plugin to attach its properties directly to the styler function
+  for (let i = 0; i < plugins.length; i++) {
+    const plugin = plugins[i]
+    if (plugin.attachProperties) {
+      plugin.attachProperties(stylerFunction, pluginOptions)
+    }
+  }
+
+  // Also attach registered ANSI codes directly as properties
+  for (const prop in registeredCodes) {
+    if (!(prop in stylerFunction)) { // Avoid overriding existing properties
+      Object.defineProperty(stylerFunction, prop, {
+        get() {
+          return createStyler([...codes, registeredCodes[prop]], accumulatedText)
+        },
+        enumerable: true,
+        configurable: true
+      })
+    }
+  }
+
+  // Cache the styler function for performance
+  proxyCache.set(cacheKey, stylerFunction)
+
+  return stylerFunction
 }

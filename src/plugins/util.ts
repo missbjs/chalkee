@@ -2,7 +2,7 @@
  * Color utilities plugin
  * Provides hex, rgb, bgHex, bgRgb color utilities with proper TypeScript augmentation
  */
-import type { StylePlugin } from './base'
+import type { StylePlugin, AttachPropertiesOptions } from './base'
 import type { AnsiCodes } from '../ansi'
 import { Styler, createStyler } from '../styler'
 import { register, plugins } from '../registry'
@@ -130,77 +130,6 @@ function getBgModeCodeMarker(): string | undefined {
   return undefined
 }
 
-// Define color utility properties directly on the Styler prototype
-Object.defineProperties(Styler.prototype, {
-  hex: {
-    get() {
-      const handler = (color: string) => {
-        const [r, g, b] = parseHex(color)
-        const rgbCode = createRgbCode(r, g, b)
-        return createStyler([rgbCode], '')
-      }
-      return handler
-    },
-    enumerable: true,
-    configurable: true
-  },
-
-  h: {
-    get() {
-      const handler = (color: string) => {
-        const [r, g, b] = parseHex(color)
-        const rgbCode = createRgbCode(r, g, b)
-        return createStyler([rgbCode], '')
-      }
-      return handler
-    },
-    enumerable: true,
-    configurable: true
-  },
-
-  bgHex: {
-    get() {
-      const handler = (color: string) => {
-        const [r, g, b] = parseHex(color)
-        const rgbCode = createBgRgbCode(r, g, b)
-        return createStyler([rgbCode], '')
-      }
-      return handler
-    },
-    enumerable: true,
-    configurable: true
-  },
-
-  rgb: {
-    get() {
-      const handler = (r: number, g: number, b: number) => {
-        validateRgb(r, g, b)
-        const rgbCode = createRgbCode(r, g, b)
-        return createStyler([rgbCode], '')
-      }
-      return handler
-    },
-    enumerable: true,
-    configurable: true
-  },
-
-  bgRgb: {
-    get() {
-      const handler = (r: number, g: number, b: number) => {
-        validateRgb(r, g, b)
-        const rgbCode = createBgRgbCode(r, g, b)
-        return createStyler([rgbCode], '')
-      }
-      return handler
-    },
-    enumerable: true,
-    configurable: true
-  }
-})
-
-// Export the utility functions so they can be imported directly
-export { createRgbCode, createBgRgbCode, parseHex, validateRgb, hslToRgb }
-
 export const utilPlugin: StylePlugin = {
   name: 'util',
 
@@ -264,7 +193,86 @@ export const utilPlugin: StylePlugin = {
 
     return undefined
   },
+
+  /**
+   * Attach color utility properties directly to a styler function
+   * This provides better performance than proxy-based property access
+   */
+  attachProperties(stylerFunction: Function, options: AttachPropertiesOptions): void {
+    const { createStyler } = options
+
+    // Attach color utility properties
+    Object.defineProperties(stylerFunction, {
+      hex: {
+        get() {
+          const handler = (color: string) => {
+            const [r, g, b] = parseHex(color)
+            const rgbCode = createRgbCode(r, g, b)
+            return createStyler([rgbCode], '')
+          }
+          return handler
+        },
+        enumerable: true,
+        configurable: true
+      },
+
+      h: {
+        get() {
+          const handler = (color: string) => {
+            const [r, g, b] = parseHex(color)
+            const rgbCode = createRgbCode(r, g, b)
+            return createStyler([rgbCode], '')
+          }
+          return handler
+        },
+        enumerable: true,
+        configurable: true
+      },
+
+      bgHex: {
+        get() {
+          const handler = (color: string) => {
+            const [r, g, b] = parseHex(color)
+            const rgbCode = createBgRgbCode(r, g, b)
+            return createStyler([rgbCode], '')
+          }
+          return handler
+        },
+        enumerable: true,
+        configurable: true
+      },
+
+      rgb: {
+        get() {
+          const handler = (r: number, g: number, b: number) => {
+            validateRgb(r, g, b)
+            const rgbCode = createRgbCode(r, g, b)
+            return createStyler([rgbCode], '')
+          }
+          return handler
+        },
+        enumerable: true,
+        configurable: true
+      },
+
+      bgRgb: {
+        get() {
+          const handler = (r: number, g: number, b: number) => {
+            validateRgb(r, g, b)
+            const rgbCode = createBgRgbCode(r, g, b)
+            return createStyler([rgbCode], '')
+          }
+          return handler
+        },
+        enumerable: true,
+        configurable: true
+      }
+    })
+  }
 }
+
+// Export the utility functions so they can be imported directly
+export { createRgbCode, createBgRgbCode, parseHex, validateRgb, hslToRgb }
 
 // Self-register the plugin when imported
 register(utilPlugin)

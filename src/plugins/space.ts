@@ -2,7 +2,7 @@
  * Space mode plugin
  * Adds automatic spacing between chained segments
  */
-import type { StylePlugin } from './base'
+import type { StylePlugin, AttachPropertiesOptions } from './base'
 import type { AnsiCodes } from '../ansi'
 import { Styler } from '../styler'
 import { register } from '../registry'
@@ -25,6 +25,25 @@ export const spacePlugin: StylePlugin = {
     }
 
     return undefined
+  },
+
+  /**
+   * Attach space properties directly to a styler function
+   * This provides better performance than proxy-based property access
+   */
+  attachProperties(stylerFunction: Function, options: AttachPropertiesOptions): void {
+    const { createStyler } = options
+
+    // Attach space property
+    Object.defineProperty(stylerFunction, 'as', {
+      get() {
+        // Create a special ANSI code for space mode
+        const spaceCode = { open: SPACE_MARKER, close: '' }
+        return createStyler([spaceCode], '')
+      },
+      enumerable: true,
+      configurable: true
+    })
   },
 
   isMarkerCode(code: AnsiCodes) {

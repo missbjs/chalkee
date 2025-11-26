@@ -2,7 +2,7 @@
  * Modifiers plugin
  * Provides ANSI modifier codes (bold, italic, underline, etc.) with proper TypeScript augmentation
  */
-import type { StylePlugin } from './base'
+import type { StylePlugin, AttachPropertiesOptions } from './base'
 import type { AnsiCodes } from '../ansi'
 import { Styler, createStyler } from '../styler'
 import { register, registerCodes, plugins, createStylerProperty } from '../registry'
@@ -173,6 +173,119 @@ export const modifiersPlugin: StylePlugin = {
         // Modifiers are handled through the registered codes
         return undefined
     },
+
+    /**
+     * Attach modifier properties directly to a styler function
+     * This provides better performance than proxy-based property access
+     */
+    attachProperties(stylerFunction: Function, options: AttachPropertiesOptions): void {
+        const { createStyler } = options
+
+        // Attach modifier properties
+        Object.defineProperties(stylerFunction, {
+            // Standard modifiers
+            reset: {
+                get() {
+                    return createStyler([modifierCodes.reset], '')
+                },
+                enumerable: true,
+                configurable: true
+            },
+            bold: {
+                get() {
+                    return createStyler([modifierCodes.bold], '')
+                },
+                enumerable: true,
+                configurable: true
+            },
+            dim: {
+                get() {
+                    return createStyler([modifierCodes.dim], '')
+                },
+                enumerable: true,
+                configurable: true
+            },
+            italic: {
+                get() {
+                    return createStyler([modifierCodes.italic], '')
+                },
+                enumerable: true,
+                configurable: true
+            },
+            underline: {
+                get() {
+                    return createStyler([modifierCodes.underline], '')
+                },
+                enumerable: true,
+                configurable: true
+            },
+            inverse: {
+                get() {
+                    return createStyler([modifierCodes.inverse], '')
+                },
+                enumerable: true,
+                configurable: true
+            },
+            hidden: {
+                get() {
+                    return createStyler([modifierCodes.hidden], '')
+                },
+                enumerable: true,
+                configurable: true
+            },
+            strikethrough: {
+                get() {
+                    return createStyler([modifierCodes.strikethrough], '')
+                },
+                enumerable: true,
+                configurable: true
+            },
+
+            // Shorthand aliases
+            r: {
+                get() {
+                    return createStyler([modifierCodes.reset], '')
+                },
+                enumerable: true,
+                configurable: true
+            },
+            b: {
+                get() {
+                    return createStyler([modifierCodes.bold], '')
+                },
+                enumerable: true,
+                configurable: true
+            },
+            i: {
+                get() {
+                    return createStyler([modifierCodes.italic], '')
+                },
+                enumerable: true,
+                configurable: true
+            },
+            u: {
+                get() {
+                    return createStyler([modifierCodes.underline], '')
+                },
+                enumerable: true,
+                configurable: true
+            },
+            s: {
+                get() {
+                    return createStyler([modifierCodes.strikethrough], '')
+                },
+                enumerable: true,
+                configurable: true
+            },
+            d: {
+                get() {
+                    return createStyler([modifierCodes.dim], '')
+                },
+                enumerable: true,
+                configurable: true
+            }
+        })
+    }
 }
 
 // Self-register the plugin when imported

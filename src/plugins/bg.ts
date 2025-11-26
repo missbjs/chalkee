@@ -1,4 +1,4 @@
-import type { StylePlugin } from './base'
+import type { StylePlugin, AttachPropertiesOptions } from './base'
 import { Styler } from '../styler'
 import type { AnsiCodes } from '../ansi'
 import { registeredCodes, register } from '../registry'
@@ -59,6 +59,25 @@ export const bgPlugin: StylePlugin = {
     }
 
     return undefined
+  },
+
+  /**
+   * Attach bg properties directly to a styler function
+   * This provides better performance than proxy-based property access
+   */
+  attachProperties(stylerFunction: Function, options: AttachPropertiesOptions): void {
+    const { createStyler } = options
+
+    // Attach bg property
+    Object.defineProperty(stylerFunction, 'bg', {
+      get() {
+        // Create a special marker for background-color mode
+        const bgModeCode = { open: BG_MODE_MARKER, close: '' }
+        return createStyler([bgModeCode], '')
+      },
+      enumerable: true,
+      configurable: true
+    })
   },
 
   isMarkerCode(code: AnsiCodes) {

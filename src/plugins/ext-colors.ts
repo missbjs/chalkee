@@ -2,8 +2,8 @@
  * Custom colors plugin
  * Provides extended color codes with proper TypeScript augmentation
  */
-import type { StylePlugin } from './base'
-import { Styler } from '../styler'
+import type { StylePlugin, AttachPropertiesOptions } from './base'
+import { Styler, createStyler } from '../styler'
 import { register, registerCodes, createStylerProperty } from '../registry'
 
 // Custom ANSI codes - defined at module level
@@ -59,6 +59,38 @@ Object.defineProperties(Styler.prototype, {
 
 export const customColorsPlugin: StylePlugin = {
     name: 'customColors',
+
+    /**
+     * Attach custom color properties directly to a styler function
+     * This provides better performance than proxy-based property access
+     */
+    attachProperties(stylerFunction: Function, options: AttachPropertiesOptions): void {
+        const { createStyler } = options
+
+        // Attach custom color properties
+        Object.defineProperties(stylerFunction, {
+            // Custom foreground colors
+            pink: createStylerProperty(customCodes.pink, { createStyler }),
+            orange: createStylerProperty(customCodes.orange, { createStyler }),
+            purple: createStylerProperty(customCodes.purple, { createStyler }),
+            lime: createStylerProperty(customCodes.lime, { createStyler }),
+            coral: createStylerProperty(customCodes.coral, { createStyler }),
+            teal: createStylerProperty(customCodes.teal, { createStyler }),
+
+            // Custom background colors
+            bgPink: createStylerProperty(customCodes.bgPink, { createStyler }),
+            bgOrange: createStylerProperty(customCodes.bgOrange, { createStyler }),
+            bgPurple: createStylerProperty(customCodes.bgPurple, { createStyler }),
+            bgLime: createStylerProperty(customCodes.bgLime, { createStyler }),
+            bgCoral: createStylerProperty(customCodes.bgCoral, { createStyler }),
+            bgTeal: createStylerProperty(customCodes.bgTeal, { createStyler }),
+
+            // Custom modifiers
+            blink: createStylerProperty(customCodes.blink, { createStyler }),
+            overline: createStylerProperty(customCodes.overline, { createStyler }),
+            doubleUnderline: createStylerProperty(customCodes.doubleUnderline, { createStyler })
+        })
+    }
 }
 
 // Self-register the plugin when imported

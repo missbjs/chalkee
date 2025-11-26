@@ -2,7 +2,7 @@
  * Emoji plugin
  * Adds emoji support to styling
  */
-import type { StylePlugin } from './base'
+import type { StylePlugin, AttachPropertiesOptions } from './base'
 import { Styler } from '../styler'
 import { register } from '../registry'
 
@@ -198,6 +198,50 @@ export const emojiPlugin: StylePlugin = {
     }
 
     return undefined
+  },
+
+  /**
+   * Attach emoji properties directly to a styler function
+   * This provides better performance than proxy-based property access
+   */
+  attachProperties(stylerFunction: Function, options: AttachPropertiesOptions): void {
+    const { createStyler } = options
+
+    // Attach emoji property
+    Object.defineProperty(stylerFunction, 'emoji', {
+      get() {
+        // Create a function that can accept an emoji name or emoji character
+        const emojiHandler = (emojiNameOrChar: string) => {
+          // If it's already an emoji character, use it directly
+          // Otherwise, look it up in our emoji map
+          const emoji = emojiMap[emojiNameOrChar] || emojiNameOrChar
+          return createStyler([], emoji)
+        }
+
+          // Also add a method to get all available emojis
+          ; (emojiHandler as any).list = () => Object.keys(emojiMap)
+          ; (emojiHandler as any).random = () => {
+            const keys = Object.keys(emojiMap)
+            const randomKey = keys[Math.floor(Math.random() * keys.length)]
+            return emojiMap[randomKey]
+          }
+
+        return emojiHandler
+      },
+      enumerable: true,
+      configurable: true
+    })
+
+    // Attach direct emoji name access properties
+    for (const [emojiName, emojiChar] of Object.entries(emojiMap)) {
+      Object.defineProperty(stylerFunction, emojiName, {
+        get() {
+          return createStyler([], emojiChar)
+        },
+        enumerable: true,
+        configurable: true
+      })
+    }
   }
 }
 

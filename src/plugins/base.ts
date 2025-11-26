@@ -32,6 +32,15 @@ export interface StylePlugin {
   ): Styler | undefined
 
   /**
+   * Attach properties directly to a styler function
+   * This is used as an alternative to proxy-based property handling for better performance
+   */
+  attachProperties?(
+    stylerFunction: Function,
+    options: AttachPropertiesOptions
+  ): void
+
+  /**
    * Check if a code is a marker code that should be filtered when rendering
    * Marker codes are used for mode tracking but don't produce visual output
    */
