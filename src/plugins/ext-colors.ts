@@ -3,7 +3,7 @@
  * Provides extended color codes with proper TypeScript augmentation
  */
 import type { StylePlugin, AttachPropertiesOptions } from './base'
-import { Styler, createStyler } from '../styler'
+import { Styler } from '../styler'
 import { register, registerCodes, createStylerProperty } from '../registry'
 
 // Custom ANSI codes - defined at module level

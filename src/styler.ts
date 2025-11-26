@@ -3,26 +3,13 @@ import {
   isColorSupported,
 } from './ansi'
 import {
-  handleProperty,
   processText,
   filterMarkerCodes,
   registeredCodes,
   plugins,
 } from './registry'
 
-// Cache for proxy objects to improve performance
-const proxyCache = new Map<string, any>()
 
-/**
- * Generate a cache key for proxy objects
- */
-function generateCacheKey(codes: AnsiCodes[], accumulatedText: string): string {
-  if (codes.length === 0) {
-    return `text:${accumulatedText}`
-  }
-  const codesKey = codes.map((c) => `${c.open}|${c.close}`).join(',')
-  return `${codesKey}|${accumulatedText}`
-}
 
 /**
  * Apply ANSI codes to text
@@ -155,12 +142,6 @@ export class Styler {
  * This is the main entry point for creating styled text functions
  */
 export function createStyler(codes: AnsiCodes[] = [], accumulatedText: string = ''): any {
-  const cacheKey = generateCacheKey(codes, accumulatedText)
-
-  // Check cache first for performance
-  if (proxyCache.has(cacheKey)) {
-    return proxyCache.get(cacheKey)
-  }
 
   // Create the main function that handles both regular calls and template literals
   function stylerFunction(...args: [string] | [TemplateStringsArray, ...unknown[]]) {
@@ -275,9 +256,6 @@ export function createStyler(codes: AnsiCodes[] = [], accumulatedText: string = 
       })
     }
   }
-
-  // Cache the styler function for performance
-  proxyCache.set(cacheKey, stylerFunction)
 
   return stylerFunction
 }

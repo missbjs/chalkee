@@ -4,7 +4,7 @@
  */
 import type { StylePlugin, AttachPropertiesOptions } from './base'
 import type { AnsiCodes } from '../ansi'
-import { Styler, createStyler } from '../styler'
+import { Styler } from '../styler'
 import { register, plugins } from '../registry'
 
 /**

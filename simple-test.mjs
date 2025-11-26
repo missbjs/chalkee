@@ -6,7 +6,7 @@ import './dist/plugins/bg.mjs';
 import './dist/plugins/util.mjs';
 
 // Then import the styler
-import { c as createStyler } from './dist/styler-BvFvHSCa.js';
+import { c as createStyler } from './dist/styler-hPGTeQIj.js';
 
 console.log('Creating styler...');
 const styler = createStyler();
