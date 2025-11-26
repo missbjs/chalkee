@@ -27,6 +27,7 @@ export type { Styler } from './styler'
 import { register } from './registry'
 export { register, registeredCodes } from './registry'
 export { createRgbCode, hslToRgb } from './plugins/util'
+export { escapeAnsi } from './styler'
 
 // Method to register plugins externally
 export const registerPluginExternal = (plugin: any) => {

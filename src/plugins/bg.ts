@@ -35,6 +35,22 @@ export const bgPlugin: StylePlugin = {
       }
     }
 
+    // Handle .as property when in bg-mode
+    if (prop === 'as') {
+      // Check if we're in background-color mode
+      const bgMode = codes.some(code => code.open === BG_MODE_MARKER)
+      if (bgMode) {
+        // Remove bg-mode marker codes and create a new styler without bg-mode
+        // This new styler should then have its .as property accessed
+        const nonBgModeCodes = codes.filter(code => code.open !== BG_MODE_MARKER)
+        if (options?.createStyler) {
+          // Create a styler without bg-mode, preserving the accumulated text
+          const stylerWithoutBgMode = (options.createStyler as Function)(nonBgModeCodes, accumulatedText)
+          return stylerWithoutBgMode
+        }
+      }
+    }
+
     // Check if we're in background-color mode
     const bgMode = codes.some(code => code.open === BG_MODE_MARKER)
 

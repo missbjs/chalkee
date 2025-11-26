@@ -1,6 +1,7 @@
 process.env.FORCE_COLOR = '1';
 
-import { bg, red, bold } from '../dist/index.mjs';
+import crayon from '../dist/index.mjs';
+const { bg, red, bold } = crayon;
 
 console.log('\n=== Persistent bg-Mode Demonstration ===\n');
 

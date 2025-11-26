@@ -182,270 +182,54 @@ export const corePlugin: StylePlugin = {
 
         // Attach foreground colors
         Object.defineProperties(stylerFunction, {
-            red: {
-                get() {
-                    return createStyler([coreCodes.red], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            green: {
-                get() {
-                    return createStyler([coreCodes.green], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            blue: {
-                get() {
-                    return createStyler([coreCodes.blue], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            yellow: {
-                get() {
-                    return createStyler([coreCodes.yellow], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            magenta: {
-                get() {
-                    return createStyler([coreCodes.magenta], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            cyan: {
-                get() {
-                    return createStyler([coreCodes.cyan], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            white: {
-                get() {
-                    return createStyler([coreCodes.white], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            black: {
-                get() {
-                    return createStyler([coreCodes.black], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            gray: {
-                get() {
-                    return createStyler([coreCodes.gray], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            grey: {
-                get() {
-                    return createStyler([coreCodes.gray], '')
-                },
-                enumerable: true,
-                configurable: true
-            }
+            red: createStylerProperty(coreCodes.red, { createStyler }),
+            green: createStylerProperty(coreCodes.green, { createStyler }),
+            blue: createStylerProperty(coreCodes.blue, { createStyler }),
+            yellow: createStylerProperty(coreCodes.yellow, { createStyler }),
+            magenta: createStylerProperty(coreCodes.magenta, { createStyler }),
+            cyan: createStylerProperty(coreCodes.cyan, { createStyler }),
+            white: createStylerProperty(coreCodes.white, { createStyler }),
+            black: createStylerProperty(coreCodes.black, { createStyler }),
+            gray: createStylerProperty(coreCodes.gray, { createStyler }),
+            grey: createStylerProperty(coreCodes.gray, { createStyler })
         })
 
         // Attach bright foreground colors
         Object.defineProperties(stylerFunction, {
-            redBright: {
-                get() {
-                    return createStyler([coreCodes.redBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            greenBright: {
-                get() {
-                    return createStyler([coreCodes.greenBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            blueBright: {
-                get() {
-                    return createStyler([coreCodes.blueBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            yellowBright: {
-                get() {
-                    return createStyler([coreCodes.yellowBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            magentaBright: {
-                get() {
-                    return createStyler([coreCodes.magentaBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            cyanBright: {
-                get() {
-                    return createStyler([coreCodes.cyanBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            whiteBright: {
-                get() {
-                    return createStyler([coreCodes.whiteBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            blackBright: {
-                get() {
-                    return createStyler([coreCodes.blackBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            }
+            redBright: createStylerProperty(coreCodes.redBright, { createStyler }),
+            greenBright: createStylerProperty(coreCodes.greenBright, { createStyler }),
+            blueBright: createStylerProperty(coreCodes.blueBright, { createStyler }),
+            yellowBright: createStylerProperty(coreCodes.yellowBright, { createStyler }),
+            magentaBright: createStylerProperty(coreCodes.magentaBright, { createStyler }),
+            cyanBright: createStylerProperty(coreCodes.cyanBright, { createStyler }),
+            whiteBright: createStylerProperty(coreCodes.whiteBright, { createStyler }),
+            blackBright: createStylerProperty(coreCodes.blackBright, { createStyler })
         })
 
         // Attach background colors
         Object.defineProperties(stylerFunction, {
-            bgRed: {
-                get() {
-                    return createStyler([coreCodes.bgRed], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgGreen: {
-                get() {
-                    return createStyler([coreCodes.bgGreen], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgBlue: {
-                get() {
-                    return createStyler([coreCodes.bgBlue], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgYellow: {
-                get() {
-                    return createStyler([coreCodes.bgYellow], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgMagenta: {
-                get() {
-                    return createStyler([coreCodes.bgMagenta], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgCyan: {
-                get() {
-                    return createStyler([coreCodes.bgCyan], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgWhite: {
-                get() {
-                    return createStyler([coreCodes.bgWhite], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgBlack: {
-                get() {
-                    return createStyler([coreCodes.bgBlack], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgGray: {
-                get() {
-                    return createStyler([coreCodes.bgGray], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgGrey: {
-                get() {
-                    return createStyler([coreCodes.bgGray], '')
-                },
-                enumerable: true,
-                configurable: true
-            }
+            bgRed: createStylerProperty(coreCodes.bgRed, { createStyler }),
+            bgGreen: createStylerProperty(coreCodes.bgGreen, { createStyler }),
+            bgBlue: createStylerProperty(coreCodes.bgBlue, { createStyler }),
+            bgYellow: createStylerProperty(coreCodes.bgYellow, { createStyler }),
+            bgMagenta: createStylerProperty(coreCodes.bgMagenta, { createStyler }),
+            bgCyan: createStylerProperty(coreCodes.bgCyan, { createStyler }),
+            bgWhite: createStylerProperty(coreCodes.bgWhite, { createStyler }),
+            bgBlack: createStylerProperty(coreCodes.bgBlack, { createStyler }),
+            bgGray: createStylerProperty(coreCodes.bgGray, { createStyler }),
+            bgGrey: createStylerProperty(coreCodes.bgGray, { createStyler })
         })
 
         // Attach bright background colors
         Object.defineProperties(stylerFunction, {
-            bgRedBright: {
-                get() {
-                    return createStyler([coreCodes.bgRedBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgGreenBright: {
-                get() {
-                    return createStyler([coreCodes.bgGreenBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgBlueBright: {
-                get() {
-                    return createStyler([coreCodes.bgBlueBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgYellowBright: {
-                get() {
-                    return createStyler([coreCodes.bgYellowBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgMagentaBright: {
-                get() {
-                    return createStyler([coreCodes.bgMagentaBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgCyanBright: {
-                get() {
-                    return createStyler([coreCodes.bgCyanBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgWhiteBright: {
-                get() {
-                    return createStyler([coreCodes.bgWhiteBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            },
-            bgBlackBright: {
-                get() {
-                    return createStyler([coreCodes.bgBlackBright], '')
-                },
-                enumerable: true,
-                configurable: true
-            }
+            bgRedBright: createStylerProperty(coreCodes.bgRedBright, { createStyler }),
+            bgGreenBright: createStylerProperty(coreCodes.bgGreenBright, { createStyler }),
+            bgBlueBright: createStylerProperty(coreCodes.bgBlueBright, { createStyler }),
+            bgYellowBright: createStylerProperty(coreCodes.bgYellowBright, { createStyler }),
+            bgMagentaBright: createStylerProperty(coreCodes.bgMagentaBright, { createStyler }),
+            bgCyanBright: createStylerProperty(coreCodes.bgCyanBright, { createStyler }),
+            bgWhiteBright: createStylerProperty(coreCodes.bgWhiteBright, { createStyler }),
+            bgBlackBright: createStylerProperty(coreCodes.bgBlackBright, { createStyler })
         })
     }
 }

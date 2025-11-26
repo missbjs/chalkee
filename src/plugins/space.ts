@@ -39,7 +39,16 @@ export const spacePlugin: StylePlugin = {
       get() {
         // Create a special ANSI code for space mode
         const spaceCode = { open: SPACE_MARKER, close: '' }
-        return createStyler([spaceCode], '')
+        // Try to preserve the accumulatedText from the current styler
+        // We can get it by calling toString() on the styler function
+        let accumulatedText = '';
+        try {
+          accumulatedText = stylerFunction.toString();
+        } catch (e) {
+          // If there's an error, use empty string
+          accumulatedText = '';
+        }
+        return createStyler([spaceCode], accumulatedText)
       },
       enumerable: true,
       configurable: true
@@ -70,7 +79,11 @@ export const spacePlugin: StylePlugin = {
         styledText = applyStyle(text, filterMarkerCodes(codes))
       }
 
-      return { styledText }
+      // Combine the accumulated text with the new styled text
+      // The accumulatedText already contains the previous styled segments
+      // The styledText contains the space and the new segment
+      const result = { styledText: accumulatedText + styledText };
+      return result
     }
 
     return undefined

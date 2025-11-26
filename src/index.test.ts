@@ -5,7 +5,72 @@
 import { describe, test } from 'node:test'
 import assert from 'node:assert'
 // Import from the full version to get all plugins registered
-import crayon from './index.full'
+import crayon, {
+  // Core color functions
+  black,
+  red,
+  green,
+  yellow,
+  blue,
+  magenta,
+  cyan,
+  white,
+  gray,
+  grey,
+  
+  // Bright foreground colors
+  blackBright,
+  redBright,
+  greenBright,
+  yellowBright,
+  blueBright,
+  magentaBright,
+  cyanBright,
+  whiteBright,
+  
+  // Background colors
+  bgBlack,
+  bgRed,
+  bgGreen,
+  bgYellow,
+  bgBlue,
+  bgMagenta,
+  bgCyan,
+  bgWhite,
+  bgGray,
+  bgGrey,
+  
+  // Bright background colors
+  bgBlackBright,
+  bgRedBright,
+  bgGreenBright,
+  bgYellowBright,
+  bgBlueBright,
+  bgMagentaBright,
+  bgCyanBright,
+  bgWhiteBright,
+  
+  // Modifiers
+  reset,
+  bold,
+  dim,
+  italic,
+  underline,
+  overline,
+  inverse,
+  hidden,
+  strikethrough,
+  
+  // Utility functions
+  hex,
+  rgb,
+  bgHex,
+  bgRgb,
+  h,
+  b,
+  i,
+  u
+} from './index.full'
 
 // Disable color support for testing
 process.env.NO_COLOR = '1'

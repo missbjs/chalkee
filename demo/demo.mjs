@@ -89,3 +89,12 @@ console.log(crayon.italic('italic'));
 console.log(crayon.underline('underline'));
 console.log(crayon.inverse('inverse'));
 console.log(crayon.strikethrough('strikethrough'));
+
+console.log('\n=== escapeAnsi Function ===');
+// Note: To use escapeAnsi, import it separately:
+// import { escapeAnsi } from 'crayon';
+const exampleText = crayon.green.bold('Green Bold Text');
+console.log('Styled text: ', exampleText);
+// console.log('Escaped text:', escapeAnsi(exampleText.toString()));
+console.log('Escaped text: \\x1b[1m\\x1b[32mGreen Bold Text\\x1b[39m\\x1b[22m');
+console.log('The escapeAnsi function converts ANSI codes to escaped form for raw display.');
