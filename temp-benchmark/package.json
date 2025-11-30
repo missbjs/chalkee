@@ -1,9 +1,0 @@
-{
-  "name": "crayon-benchmark",
-  "version": "1.0.0",
-  "type": "module",
-  "dependencies": {
-    "chalk": "^5.0.0",
-    "ansi-colors": "^4.1.3"
-  }
-}
