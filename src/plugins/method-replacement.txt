@@ -1,0 +1,22 @@
+    // Helper method to create a new styled function with updated state
+    private createStateUpdater(modifierFn: (instance: CallableChalkee) => void): any {
+        const self = this
+        
+        // Create a new CallableChalkee instance with the updated state
+        const newInstance = new CallableChalkee(undefined, ['', self.getState()])
+        
+        // Copy the current state to the new instance
+        newInstance._colors = [...self._colors]
+        newInstance._modifiers = [...self._modifiers]
+        newInstance._backgroundColors = [...self._backgroundColors]
+        newInstance._isOpen = self._isOpen
+        newInstance._autoSpacing = self._autoSpacing
+        
+        // Apply the modifier function to update the state
+        modifierFn(newInstance)
+        
+        // Set the prototype to ensure chainable methods
+        Object.setPrototypeOf(newInstance, self)
+        
+        return newInstance
+    }

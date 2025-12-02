@@ -1,325 +1,277 @@
-/**
- * Template literal handler for processing tagged template calls
- */
+import { StyleChainState, Chalkee } from '../types'
+import { getColor } from './registry'
+import { mergeStyleStates, createStyleState, styleStateToAnsi, createReset } from './styler'
+import util from 'util'
 
-import { StyleChainState, Chalkee } from '../types';
-import { applyStyle, mergeStyleStates, createStyleState } from './styler';
-import { getColor, getModifier } from './registry';
-
-/**
- * Process a template literal call
- * @param strings The template strings
- * @param values The interpolated values
- * @param state The current style state
- * @returns A new styled function with the applied styles
- */
-export function processTemplateLiteral(
-    strings: TemplateStringsArray,
-    values: unknown[],
-    state: StyleChainState
-): Chalkee & string {
-    // Combine the strings and values
-    let result = '';
-    for (let i = 0; i < strings.length; i++) {
-        result += strings[i];
-        if (i < values.length) {
-            result += String(values[i]);
-        }
-    }
-    
-    // Apply styling to the result
-    const styledText = applyStyle(result, state);
-    
-    // Return a new styled function
-    return createStyledFunction(styledText, state) as Chalkee & string;
-}
+// Get the inspect.custom symbol once at module level
+const customInspectSymbol = util.inspect.custom
 
 /**
- * Process a regular function call
- * @param text The text to style
- * @param state The current style state
- * @returns A new styled function with the applied styles
+ * CallableChalkee class that provides chainable styling methods
+ * Implements the "fn cum class" pattern where function creation happens in constructor
  */
-export function processFunctionCall(
-    text: string,
-    state: StyleChainState
-): Chalkee & string {
-    // Apply styling to the text
-    const styledText = applyStyle(text, state);
-    
-    // Return a new styled function
-    return createStyledFunction(styledText, state) as Chalkee & string;
-}
+class CallableChalkee {
+    // Private state properties
+    private _state: StyleChainState
+    private _accumulatedText: string
 
-/**
- * Create a styled function that maintains the current state and can be chained
- * @param text The styled text
- * @param state The current style state
- * @returns A new styled function
- */
-export function createStyledFunction(text: string, state: StyleChainState): Chalkee {
-    // Create the function that can be called in different ways
-    const fn: any = function(...args: any[]): Chalkee & string {
-        // Handle different call patterns
-        if (args.length === 1 && typeof args[0] === 'string') {
-            // Regular function call: red('text')
-            return processFunctionCall(args[0], state);
-        } else if (args.length >= 1 && Array.isArray(args[0]) && 'raw' in args[0] && Array.isArray((args[0] as any).raw)) {
-            // Template literal call: red`text`
-            return processTemplateLiteral(args[0] as TemplateStringsArray, args.slice(1), state);
-        } else if (args.length === 0) {
-            // Called without arguments, return the current text
-            return Object.assign(fn, {
-                toString: () => text,
-                valueOf: () => text,
-                [Symbol.toPrimitive]: () => text
-            }) as Chalkee & string;
+    constructor(state: StyleChainState, text: string = '') {
+        // Store state
+        this._state = state || createStyleState()
+
+        // Store accumulated text (style the initial text if provided)
+        if (text) {
+            const open = styleStateToAnsi(this._state)
+            const close = createReset()
+            this._accumulatedText = open + text + close
         } else {
-            // Handle other cases by converting args to string
-            const combined = args.map(arg => String(arg)).join('');
-            return processFunctionCall(combined, state);
+            this._accumulatedText = ''
         }
-    };
-    
-    // Add all the chainable methods to the function
-    addChainableMethods(fn, state);
-    
-    // Make the function also behave like a string
-    Object.assign(fn, {
-        toString: () => text,
-        valueOf: () => text,
-        [Symbol.toPrimitive]: () => text
-    });
-    
-    return fn as Chalkee;
+
+        // Create a function that will act as the callable instance
+        const fn: any = function (this: CallableChalkee, ...args: any[]) {
+            if (args.length === 1 && typeof args[0] === 'string') {
+                // For chaining with text, apply styling to this text and combine with accumulated text
+                const newText = args[0]
+                const newInstance = new CallableChalkee(fn._state, '')
+                // Combine the previously accumulated text with the new styled text
+                const open = styleStateToAnsi(fn._state)
+                const close = createReset()
+                const styledNewText = open + newText + close
+                newInstance._accumulatedText = fn._accumulatedText + styledNewText
+                return newInstance
+            } else if (args.length === 0) {
+                // Return self for chaining
+                return fn
+            } else {
+                // Handle other cases
+                const combined = args.map(arg => String(arg)).join('')
+                const newInstance = new CallableChalkee(fn._state, '')
+                const open = styleStateToAnsi(fn._state)
+                const close = createReset()
+                const styledCombinedText = open + combined + close
+                newInstance._accumulatedText = fn._accumulatedText + styledCombinedText
+                return newInstance
+            }
+        }
+
+        // Set the prototype to make methods available
+        Object.setPrototypeOf(fn, CallableChalkee.prototype)
+
+        // Override the function's toString, valueOf, and inspect methods
+        fn.toString = function () {
+            return fn._accumulatedText
+        }
+        fn.valueOf = function () {
+            return fn._accumulatedText
+        }
+        Object.defineProperty(fn, customInspectSymbol, {
+            value: function () {
+                return fn._accumulatedText
+            },
+            writable: true,
+            enumerable: false,
+            configurable: true
+        })
+
+        // Set properties on the function object
+        fn._state = this._state
+        fn._accumulatedText = this._accumulatedText
+
+        // Return the function instead of the class instance
+        return fn as any
+    }
+
+    // String conversion methods
+    toString(): string {
+        return this._accumulatedText
+    }
+
+    valueOf(): string {
+        return this._accumulatedText
+    }
+
+    // Custom inspect method
+    [Symbol.toPrimitive](hint: string): string {
+        return this._accumulatedText
+    }
+
+    // Main call method for when used as a function
+    call(...args: any[]): Chalkee {
+        if (args.length === 1 && typeof args[0] === 'string') {
+            // For chaining with text, apply styling to this text and combine with accumulated text
+            const newText = args[0]
+            const newInstance = new CallableChalkee(this._state, '')
+            // Combine the previously accumulated text with the new styled text
+            const open = styleStateToAnsi(this._state)
+            const close = createReset()
+            const styledNewText = open + newText + close
+            newInstance._accumulatedText = this._accumulatedText + styledNewText
+            return newInstance as any as Chalkee
+        } else if (args.length === 0) {
+            // Return self for chaining
+            return this as any as Chalkee
+        } else {
+            // Handle other cases
+            const combined = args.map(arg => String(arg)).join('')
+            const newInstance = new CallableChalkee(this._state, '')
+            const open = styleStateToAnsi(this._state)
+            const close = createReset()
+            const styledCombinedText = open + combined + close
+            newInstance._accumulatedText = this._accumulatedText + styledCombinedText
+            return newInstance as any as Chalkee
+        }
+    }
+
+    // Chainable color methods
+    get red(): Chalkee {
+        const currentState = this._state || createStyleState()
+        const newState = mergeStyleStates(currentState, {
+            ...createStyleState(),
+            colors: [getColor('red')!],
+            isOpen: true,
+            autoSpacing: currentState.autoSpacing || false
+        })
+        const newInstance = new CallableChalkee(newState, '')
+        newInstance._accumulatedText = this._accumulatedText
+        return newInstance as any as Chalkee
+    }
+
+    get green(): Chalkee {
+        const currentState = this._state || createStyleState()
+        const newState = mergeStyleStates(currentState, {
+            ...createStyleState(),
+            colors: [getColor('green')!],
+            isOpen: true,
+            autoSpacing: currentState.autoSpacing || false
+        })
+        const newInstance = new CallableChalkee(newState, '')
+        newInstance._accumulatedText = this._accumulatedText
+        return newInstance as any as Chalkee
+    }
+
+    get blue(): Chalkee {
+        const currentState = this._state || createStyleState()
+        const newState = mergeStyleStates(currentState, {
+            ...createStyleState(),
+            colors: [getColor('blue')!],
+            isOpen: true,
+            autoSpacing: currentState.autoSpacing || false
+        })
+        const newInstance = new CallableChalkee(newState, '')
+        newInstance._accumulatedText = this._accumulatedText
+        return newInstance as any as Chalkee
+    }
+
+    // Chainable modifier methods
+    get bold(): Chalkee {
+        const currentState = this._state || createStyleState()
+        const newState = mergeStyleStates(currentState, {
+            ...createStyleState(),
+            modifiers: [...(currentState.modifiers || []), 'bold'],
+            isOpen: true,
+            autoSpacing: currentState.autoSpacing || false
+        })
+        const newInstance = new CallableChalkee(newState, '')
+        newInstance._accumulatedText = this._accumulatedText
+        return newInstance as any as Chalkee
+    }
+
+    get underline(): Chalkee {
+        const currentState = this._state || createStyleState()
+        const newState = mergeStyleStates(currentState, {
+            ...createStyleState(),
+            modifiers: [...(currentState.modifiers || []), 'underline'],
+            isOpen: true,
+            autoSpacing: currentState.autoSpacing || false
+        })
+        const newInstance = new CallableChalkee(newState, '')
+        newInstance._accumulatedText = this._accumulatedText
+        return newInstance as any as Chalkee
+    }
+
+    get dim(): Chalkee {
+        const currentState = this._state || createStyleState()
+        const newState = mergeStyleStates(currentState, {
+            ...createStyleState(),
+            modifiers: [...(currentState.modifiers || []), 'dim'],
+            isOpen: true,
+            autoSpacing: currentState.autoSpacing || false
+        })
+        const newInstance = new CallableChalkee(newState, '')
+        newInstance._accumulatedText = this._accumulatedText
+        return newInstance as any as Chalkee
+    }
+
+    get italic(): Chalkee {
+        const currentState = this._state || createStyleState()
+        const newState = mergeStyleStates(currentState, {
+            ...createStyleState(),
+            modifiers: [...(currentState.modifiers || []), 'italic'],
+            isOpen: true,
+            autoSpacing: currentState.autoSpacing || false
+        })
+        const newInstance = new CallableChalkee(newState, '')
+        newInstance._accumulatedText = this._accumulatedText
+        return newInstance as any as Chalkee
+    }
+
+    get strikethrough(): Chalkee {
+        const currentState = this._state || createStyleState()
+        const newState = mergeStyleStates(currentState, {
+            ...createStyleState(),
+            modifiers: [...(currentState.modifiers || []), 'strikethrough'],
+            isOpen: true,
+            autoSpacing: currentState.autoSpacing || false
+        })
+        const newInstance = new CallableChalkee(newState, '')
+        newInstance._accumulatedText = this._accumulatedText
+        return newInstance as any as Chalkee
+    }
+
+    get inverse(): Chalkee {
+        const currentState = this._state || createStyleState()
+        const newState = mergeStyleStates(currentState, {
+            ...createStyleState(),
+            modifiers: [...(currentState.modifiers || []), 'inverse'],
+            isOpen: true,
+            autoSpacing: currentState.autoSpacing || false
+        })
+        const newInstance = new CallableChalkee(newState, '')
+        newInstance._accumulatedText = this._accumulatedText
+        return newInstance as any as Chalkee
+    }
+
+    get hidden(): Chalkee {
+        const currentState = this._state || createStyleState()
+        const newState = mergeStyleStates(currentState, {
+            ...createStyleState(),
+            modifiers: [...(currentState.modifiers || []), 'hidden'],
+            isOpen: true,
+            autoSpacing: currentState.autoSpacing || false
+        })
+        const newInstance = new CallableChalkee(newState, '')
+        newInstance._accumulatedText = this._accumulatedText
+        return newInstance as any as Chalkee
+    }
+
+    // Shorthand aliases
+    get b(): Chalkee { return this.bold }
+    get d(): Chalkee { return this.dim }
+    get u(): Chalkee { return this.underline }
+    get i(): Chalkee { return this.italic }
+    get s(): Chalkee { return this.strikethrough }
 }
 
-/**
- * Add all chainable methods to a styled function
- * @param fn The function to add methods to
- * @param state The current style state
- */
-function addChainableMethods(fn: any, state: StyleChainState): void {
-    // Core colors
-    const colors = [
-        'red', 'green', 'blue', 'yellow', 'magenta', 'cyan', 'white', 'black',
-        'gray', 'grey', 'redBright', 'greenBright', 'blueBright', 'yellowBright',
-        'magentaBright', 'cyanBright', 'whiteBright', 'blackBright'
-    ];
-    
-    for (const color of colors) {
-        Object.defineProperty(fn, color, {
-            get() {
-                const colorDef = getColor(color);
-                if (!colorDef) return fn;
-                
-                const newState = mergeStyleStates(state, {
-                    ...createStyleState(),
-                    colors: [colorDef],
-                    isOpen: true,
-                    autoSpacing: false
-                });
-                
-                return createStyledFunction('', newState);
-            }
-        });
-    }
-    
-    // Background colors
-    const bgColors = [
-        'bgRed', 'bgGreen', 'bgBlue', 'bgYellow', 'bgMagenta', 'bgCyan', 'bgWhite', 'bgBlack',
-        'bgRedBright', 'bgGreenBright', 'bgBlueBright', 'bgYellowBright',
-        'bgMagentaBright', 'bgCyanBright', 'bgWhiteBright', 'bgBlackBright'
-    ];
-    
-    for (const color of bgColors) {
-        Object.defineProperty(fn, color, {
-            get() {
-                const colorDef = getColor(color);
-                if (!colorDef) return fn;
-                
-                const newState = mergeStyleStates(state, {
-                    ...createStyleState(),
-                    backgroundColors: [colorDef],
-                    isOpen: true,
-                    autoSpacing: false
-                });
-                
-                return createStyledFunction('', newState);
-            }
-        });
-    }
-    
-    // Modifiers
-    const modifiers = [
-        'bold', 'dim', 'italic', 'underline', 'strikethrough', 'inverse', 'hidden'
-    ];
-    
-    for (const modifier of modifiers) {
-        Object.defineProperty(fn, modifier, {
-            get() {
-                const newState = mergeStyleStates(state, {
-                    ...createStyleState(),
-                    modifiers: [modifier],
-                    isOpen: true,
-                    autoSpacing: false
-                });
-                
-                return createStyledFunction('', newState);
-            }
-        });
-    }
-    
-    // Shorthand aliases
-    Object.defineProperty(fn, 'b', {
-        get() {
-            const newState = mergeStyleStates(state, {
-                ...createStyleState(),
-                modifiers: ['bold'],
-                isOpen: true,
-                autoSpacing: false
-            });
-            
-            return createStyledFunction('', newState);
-        }
-    });
-    
-    Object.defineProperty(fn, 'd', {
-        get() {
-            const newState = mergeStyleStates(state, {
-                ...createStyleState(),
-                modifiers: ['dim'],
-                isOpen: true,
-                autoSpacing: false
-            });
-            
-            return createStyledFunction('', newState);
-        }
-    });
-    
-    Object.defineProperty(fn, 'i', {
-        get() {
-            const newState = mergeStyleStates(state, {
-                ...createStyleState(),
-                modifiers: ['italic'],
-                isOpen: true,
-                autoSpacing: false
-            });
-            
-            return createStyledFunction('', newState);
-        }
-    });
-    
-    Object.defineProperty(fn, 'u', {
-        get() {
-            const newState = mergeStyleStates(state, {
-                ...createStyleState(),
-                modifiers: ['underline'],
-                isOpen: true,
-                autoSpacing: false
-            });
-            
-            return createStyledFunction('', newState);
-        }
-    });
-    
-    Object.defineProperty(fn, 's', {
-        get() {
-            const newState = mergeStyleStates(state, {
-                ...createStyleState(),
-                modifiers: ['strikethrough'],
-                isOpen: true,
-                autoSpacing: false
-            });
-            
-            return createStyledFunction('', newState);
-        }
-    });
-    
-    Object.defineProperty(fn, 'r', {
-        get() {
-            const newState = mergeStyleStates(state, {
-                ...createStyleState(),
-                modifiers: ['reset'],
-                isOpen: true,
-                autoSpacing: false
-            });
-            
-            return createStyledFunction('', newState);
-        }
-    });
-    
-    // Special methods
-    Object.defineProperty(fn, 'as', {
-        get() {
-            const newState = mergeStyleStates(state, {
-                ...createStyleState(),
-                autoSpacing: true,
-                isOpen: true
-            });
-            
-            return createStyledFunction('', newState);
-        }
-    });
-    
-    Object.defineProperty(fn, 'reset', {
-        get() {
-            const newState = mergeStyleStates(state, {
-                ...createStyleState(),
-                modifiers: ['reset'],
-                isOpen: true,
-                autoSpacing: false
-            });
-            
-            return createStyledFunction('', newState);
-        }
-    });
-    
-    // Hex color method
-    fn.hex = function(color: string) {
-        // For hex colors, we'll handle them specially in the styler
-        const newState = mergeStyleStates(state, {
-            ...createStyleState(),
-            isOpen: true,
-            autoSpacing: false
-        });
-        
-        // We'll store the hex color in a special way for the styler to handle
-        // This is a simplified approach - in a real implementation, we'd need to
-        // modify the styler to handle hex colors properly
-        return createStyledFunction('', newState);
-    };
-    
-    // RGB color method
-    fn.rgb = function(r: number, g: number, b: number) {
-        const newState = mergeStyleStates(state, {
-            ...createStyleState(),
-            isOpen: true,
-            autoSpacing: false
-        });
-        
-        return createStyledFunction('', newState);
-    };
-    
-    // Background hex color method
-    fn.bgHex = function(color: string) {
-        const newState = mergeStyleStates(state, {
-            ...createStyleState(),
-            isOpen: true,
-            autoSpacing: false
-        });
-        
-        return createStyledFunction('', newState);
-    };
-    
-    // Background RGB color method
-    fn.bgRgb = function(r: number, g: number, b: number) {
-        const newState = mergeStyleStates(state, {
-            ...createStyleState(),
-            isOpen: true,
-            autoSpacing: false
-        });
-        
-        return createStyledFunction('', newState);
-    };
+// Factory function to create a callable Chalkee instance
+// Following user's requirement: "@template-handler.ts 203-238 only new Chalkee() here.... all these code should be in the class"
+function createCallableChalkee(state: StyleChainState, text: string = ''): Chalkee {
+    return new CallableChalkee(state, text) as any as Chalkee
 }
+
+// Factory function to create the initial styled function
+function createStyledFunction(text: string, state: StyleChainState): Chalkee {
+    return createCallableChalkee(state, text)
+}
+
+export { createStyledFunction, CallableChalkee }

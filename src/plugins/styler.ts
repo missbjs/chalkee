@@ -4,8 +4,8 @@
  * Styler engine for applying ANSI escape codes to text
  */
 
-import { StyleChainState, ColorDefinition } from '../types';
-import { getColor, getModifier, parseHex, rgbToAnsi256 } from './registry';
+import { StyleChainState, ColorDefinition } from '../types'
+import { getColor, getModifier, parseHex, rgbToAnsi256 } from './registry'
 
 /**
  * Convert a style chain state to ANSI escape codes
@@ -13,33 +13,33 @@ import { getColor, getModifier, parseHex, rgbToAnsi256 } from './registry';
  * @returns The ANSI escape code string
  */
 export function styleStateToAnsi(state: StyleChainState): string {
-    const codes: number[] = [];
-    
+    const codes: number[] = []
+
     // Add modifier codes
     for (const modifier of state.modifiers) {
-        const code = getModifier(modifier);
+        const code = getModifier(modifier)
         if (code !== undefined) {
-            codes.push(code);
+            codes.push(code)
         }
     }
-    
+
     // Add foreground color codes
     for (const color of state.colors) {
-        codes.push(color.ansiCode);
+        codes.push(color.ansiCode)
     }
-    
+
     // Add background color codes
     for (const color of state.backgroundColors) {
-        codes.push(color.ansiCode);
+        codes.push(color.ansiCode)
     }
-    
+
     // If no codes, return empty string
     if (codes.length === 0) {
-        return '';
+        return ''
     }
-    
+
     // Return the ANSI escape sequence
-    return `\x1b[${codes.join(';')}m`;
+    return `\x1b[${codes.join(';')}m`
 }
 
 /**
@@ -47,7 +47,7 @@ export function styleStateToAnsi(state: StyleChainState): string {
  * @returns The reset ANSI escape code
  */
 export function createReset(): string {
-    return '\x1b[0m';
+    return '\x1b[0m'
 }
 
 /**
@@ -57,10 +57,10 @@ export function createReset(): string {
  * @returns The ANSI escape code for the hex color
  */
 export function createHexCode(hex: string, isBackground: boolean = false): string {
-    const [r, g, b] = parseHex(hex);
-    const ansi256 = rgbToAnsi256(r, g, b);
-    const code = isBackground ? 48 : 38;
-    return `\x1b[${code};5;${ansi256}m`;
+    const [r, g, b] = parseHex(hex)
+    const ansi256 = rgbToAnsi256(r, g, b)
+    const code = isBackground ? 48 : 38
+    return `\x1b[${code};5;${ansi256}m`
 }
 
 /**
@@ -72,9 +72,9 @@ export function createHexCode(hex: string, isBackground: boolean = false): strin
  * @returns The ANSI escape code for the RGB color
  */
 export function createRgbCode(r: number, g: number, b: number, isBackground: boolean = false): string {
-    const ansi256 = rgbToAnsi256(r, g, b);
-    const code = isBackground ? 48 : 38;
-    return `\x1b[${code};5;${ansi256}m`;
+    const ansi256 = rgbToAnsi256(r, g, b)
+    const code = isBackground ? 48 : 38
+    return `\x1b[${code};5;${ansi256}m`
 }
 
 /**
@@ -86,23 +86,23 @@ export function createRgbCode(r: number, g: number, b: number, isBackground: boo
 export function applyStyle(text: string, state: StyleChainState): string {
     // If NO_COLOR is set, return plain text
     if ((process as any).env.NO_COLOR) {
-        return text;
+        return text
     }
-    
+
     // If FORCE_COLOR is set to 0, return plain text
     if ((process as any).env.FORCE_COLOR === '0') {
-        return text;
+        return text
     }
-    
-    const open = styleStateToAnsi(state);
-    const close = createReset();
-    
+
+    const open = styleStateToAnsi(state)
+    const close = createReset()
+
     // If auto-spacing is enabled, add a space before the text (except for the first element)
     if (state.autoSpacing && state.previousStyles) {
-        text = ' ' + text;
+        text = ' ' + text
     }
-    
-    return open + text + close;
+
+    return open + text + close
 }
 
 /**
@@ -112,14 +112,18 @@ export function applyStyle(text: string, state: StyleChainState): string {
  * @returns The merged style state
  */
 export function mergeStyleStates(base: StyleChainState, overlay: StyleChainState): StyleChainState {
+    // Deduplicate modifiers
+    const allModifiers = [...base.modifiers, ...overlay.modifiers]
+    const uniqueModifiers = [...new Set(allModifiers)]
+
     return {
         colors: [...base.colors, ...overlay.colors],
-        modifiers: [...base.modifiers, ...overlay.modifiers],
+        modifiers: uniqueModifiers,
         backgroundColors: [...base.backgroundColors, ...overlay.backgroundColors],
         isOpen: overlay.isOpen,
         previousStyles: base,
         autoSpacing: overlay.autoSpacing
-    };
+    }
 }
 
 /**
@@ -133,5 +137,5 @@ export function createStyleState(): StyleChainState {
         backgroundColors: [],
         isOpen: false,
         autoSpacing: false
-    };
+    }
 }
