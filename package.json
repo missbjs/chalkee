@@ -12,56 +12,6 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
-    "./full": {
-      "types": "./dist/index.full.d.ts",
-      "import": "./dist/index.full.mjs",
-      "require": "./dist/index.full.cjs"
-    },
-    "./min": {
-      "types": "./dist/index.minimal.d.ts",
-      "import": "./dist/index.minimal.mjs",
-      "require": "./dist/index.minimal.cjs"
-    },
-    "./core": {
-      "types": "./dist/plugins/core.d.ts",
-      "import": "./dist/plugins/core.mjs",
-      "require": "./dist/plugins/core.cjs"
-    },
-    "./util": {
-      "types": "./dist/plugins/util.d.ts",
-      "import": "./dist/plugins/util.mjs",
-      "require": "./dist/plugins/util.cjs"
-    },
-    "./modifiers": {
-      "types": "./dist/plugins/modifiers.d.ts",
-      "import": "./dist/plugins/modifiers.mjs",
-      "require": "./dist/plugins/modifiers.cjs"
-    },
-    "./bg": {
-      "types": "./dist/plugins/bg.d.ts",
-      "import": "./dist/plugins/bg.mjs",
-      "require": "./dist/plugins/bg.cjs"
-    },
-    "./space": {
-      "types": "./dist/plugins/space.d.ts",
-      "import": "./dist/plugins/space.mjs",
-      "require": "./dist/plugins/space.cjs"
-    },
-    "./emoji": {
-      "types": "./dist/plugins/emoji.d.ts",
-      "import": "./dist/plugins/emoji.mjs",
-      "require": "./dist/plugins/emoji.cjs"
-    },
-    "./ext-colors": {
-      "types": "./dist/plugins/ext-colors.d.ts",
-      "import": "./dist/plugins/ext-colors.mjs",
-      "require": "./dist/plugins/ext-colors.cjs"
-    },
-    "./plugins/registry-instance": {
-      "types": "./dist/plugins/registry-instance.d.ts",
-      "import": "./dist/plugins/registry-instance.mjs",
-      "require": "./dist/plugins/registry-instance.cjs"
-    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -71,16 +21,9 @@
     "dev": "vite build --watch",
     "build": "vite build && tsc --emitDeclarationOnly",
     "build:min": "vite build --minify && tsc --emitDeclarationOnly",
-    "test": "tsx --test src/**/*.test.ts",
-    "test:watch": "tsx --test --watch src/**/*.test.ts",
-    "demo": "node demo.mjs",
-    "demo:bg": "node demo-bg-mode.mjs",
-    "demo:chaining": "node demo-chaining.mjs",
-    "demo:rainbow": "node demo-rainbow.mjs",
-    "demo:rainbow-animated": "node demo-rainbow-animated.mjs",
-    "demo:rainbow-smooth": "node demo-rainbow-smooth.mjs",
-    "demo:custom-plugin": "node demo-custom-plugin.mjs",
-    "demo:extended-colors": "node demo-extended-colors.mjs"
+    "test": "tsx --test src/comprehensive.test.ts",
+    "test:watch": "tsx --test --watch src/comprehensive.test.ts",
+    "test:no-color": "tsx --test src/no-color.test.ts"
   },
   "keywords": [
     "terminal",
