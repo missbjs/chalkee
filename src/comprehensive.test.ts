@@ -20,6 +20,7 @@ test('Chalkee - should create basic styled strings with proper custom inspect', 
 
     // Test custom inspect functionality
     console.log('Red text (should show styled text):', redText)
+    console.log(red('Hello World'), 'Red text 2 (should show styled text):')
 
     // Test toString method
     console.log('Red text toString():', JSON.stringify(redText.toString()))

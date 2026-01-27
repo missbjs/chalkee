@@ -1,6 +1,6 @@
 {
   "name": "chalkee",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Advanced terminal styling with plugin architecture, tree-shaking, and template literal chaining",
   "type": "module",
   "main": "./dist/index.mjs",
