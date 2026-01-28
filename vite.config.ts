@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite';
-import dts from 'vite-plugin-dts';
-import { resolve } from 'path';
+import { defineConfig } from 'vite'
+import dts from 'vite-plugin-dts'
+import { resolve } from 'path'
 
 export default defineConfig({
   build: {
@@ -12,13 +12,14 @@ export default defineConfig({
       formats: ['es', 'cjs'],
       fileName: (format, entryName) => {
         if (format === 'es') {
-          return `${entryName}.mjs`;
+          return `${entryName}.mjs`
         }
-        return `${entryName}.cjs`;
+        return `${entryName}.cjs`
       }
     },
     rollupOptions: {
-      external: ['node:process'],
+      // Don't externalize util to ensure custom inspect symbol is available
+      external: [],
       output: {
         preserveModules: true,
       }
@@ -30,4 +31,4 @@ export default defineConfig({
       insertTypesEntry: true,
     }),
   ],
-});
+})

@@ -1,8 +1,7 @@
-import { StyleChainState } from '../types'
-import { createStyleState } from "./styler"
-import { styleStateToAnsi, createReset, applyStyle } from './styler'
+import { createStyleState, styleStateToAnsi, createReset, applyStyle } from './styler'
 import { attachSpecialBgMethods } from './utils'
 import { ChalkeeBase } from './ChalkeeBase'
+import { StyleChainState } from '../types'
 
 /**
  * A function that styles text and can be chained with other styles
@@ -17,31 +16,21 @@ interface StyledFunction {
     (...args: any[]): Chalkee
 }
 
-// // Get the inspect.custom symbol once at module level (safe for browser/node environments)
-// const customInspectSymbol = util?.inspect?.custom
-
-/**
- * CallableChalkee class that provides chainable styling methods
- * Implements the "fn cum class" pattern where function creation happens in constructor
- */
-export class Chalkee extends ChalkeeBase implements StyledFunction {
-    constructor(state: StyleChainState, text: string = '') {
+export class Chalkee extends ChalkeeBase {
+    constructor(state?: any, text: string = '') {
         super()
-
-        // Store state
         this._state = state || createStyleState()
-
-        // Store accumulated text (style the initial text if provided)
         if (text) {
-            const open = styleStateToAnsi(this._state)
-            const closeResult = createReset()
-            this._accumulatedText = open + text + closeResult
+            const ansiCodes = styleStateToAnsi(this._state)
+            const reset = createReset()
+            this._accumulatedText = ansiCodes + text + reset
         } else {
             this._accumulatedText = ''
         }
 
-        // Create a function that will act as the callable instance
-        const fn: any = function (this: Chalkee, ...args: any[]) {
+        // Create a function that will be returned
+        const fn: any = function (...args: any[]) {
+            // Handle different call patterns
             if (args.length === 1 && typeof args[0] === 'string') {
                 // For chaining with text, apply styling to this text and combine with accumulated text
                 const newText = args[0]
@@ -83,22 +72,21 @@ export class Chalkee extends ChalkeeBase implements StyledFunction {
         // Set the prototype to make methods available
         Object.setPrototypeOf(fn, Chalkee.prototype)
 
-        // no need, but working, since there are in class props
-        // // Override the function's toString, valueOf, and inspect methods
-        // fn.toString = function () {
-        //     return fn._accumulatedText
-        // }
-        // fn.valueOf = function () {
-        //     return fn._accumulatedText
-        // }
-        // Object.defineProperty(fn, customInspectSymbol, {
-        //     value: function () {
-        //         return fn._accumulatedText
-        //     },
-        //     writable: true,
-        //     enumerable: false,
-        //     configurable: true
-        // })
+        // Define custom inspect symbol directly on the function instance
+        // This is a workaround for the test runner environment
+        const customInspectSymbol = Symbol.for('nodejs.util.inspect.custom')
+        Object.defineProperty(fn, customInspectSymbol, {
+            value: function (depth?: number, options?: any, inspect?: any): string {
+                // If noColor is enabled, strip ANSI codes from accumulated text
+                if (ChalkeeBase.noColor) {
+                    return this._accumulatedText.replace(/\x1b\[[0-9;]*m/g, '')
+                }
+                return this._accumulatedText
+            },
+            writable: true,
+            enumerable: false,
+            configurable: true
+        })
 
         // Set properties on the function object
         fn._state = this._state
