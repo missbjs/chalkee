@@ -309,3 +309,39 @@ test('Chalkee - should support background mode chaining with .bg operator', () =
     // The space should not have any styling per user requirement
     assert.equal(result2.toString(), '\x1B[41mred background\x1B[0m \x1B[44mblue background\x1B[0m', 'Should apply foreground colors as background colors with .as.bg operator and auto-spacing')
 })
+
+test('Chalkee - should properly reset colors with .r shorthand', () => {
+    // Test that .r properly resets and doesn't carry previous colors
+    const result = yellow`  tsx`.r` fb-uploader.ts `.blue`"I:/Photos/MyAlbum"`.r.d` --photo-batch-size `.r`25 `.r.d`--video-batch-size `.r`8 `.r.d`--session `.r`my-session `.r.d`--base-url `.blue`"https://www.facebook.com/groups/123456789/media/albums"`.r.d` --profile-path `.blue`"C:/custom/profile"`
+
+    console.log('Reset test output:', result)
+
+    // The .r should clear all previous styling, so each segment after .r should start fresh
+    const output = result.toString()
+
+    // Check that yellow is only applied to the first part
+    assert.match(output, /^\x1B\[33m  tsx\x1B\[0m/, 'Should start with yellow "  tsx"')
+
+    // Check that after .r, there's a reset before the next text
+    assert.match(output, /\x1B\[0m fb-uploader\.ts /, 'Should have reset after "  tsx"')
+
+    // Check that blue is applied correctly after reset
+    assert.match(output, / fb-uploader\.ts \x1B\[0m\x1B\[34m"I:\/Photos\/MyAlbum"\x1B\[0m/, 'Should have blue "I:/Photos/MyAlbum" after reset')
+
+    // Check that .r.d produces dimmed text without previous colors
+    assert.match(output, /\x1B\[34m"I:\/Photos\/MyAlbum"\x1B\[0m\x1B\[2m --photo-batch-size /, 'Should have dimmed " --photo-batch-size " after reset')
+
+    // Check that after .r`25`, the number 25 is unstyled
+    assert.match(output, / --photo-batch-size \x1B\[0m25 /, 'Should have unstyled "25" after reset')
+
+    // Overall structure verification
+    assert.ok(output.includes('\x1B[33m'), 'Should contain yellow codes')
+    assert.ok(output.includes('\x1B[34m'), 'Should contain blue codes')
+    assert.ok(output.includes('\x1B[2m'), 'Should contain dim codes')
+    assert.ok(output.includes('\x1B[0m'), 'Should contain reset codes')
+
+    // Verify that colors are NOT carried forward after .r
+    // The output should NOT contain sequences like \x1B[33;34m (yellow+blue combined)
+    assert.ok(!output.includes('\x1B[33;34m'), 'Should not have yellow and blue combined after reset')
+    assert.ok(!output.includes('\x1B[34;33m'), 'Should not have blue and yellow combined after reset')
+})
